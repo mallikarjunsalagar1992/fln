@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="kn">
 <head>
@@ -7,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;600;700&display=swap" rel="stylesheet" />
+  <!-- SheetJS for direct .xlsx / .xls / .csv SATS Excel import -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root {
       --primary: #1a4f8b;
@@ -24,9 +28,7 @@
       --grade-b-text: #991b1b;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -50,17 +52,8 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
 
-    .app-title h1 {
-      margin: 0;
-      font-size: 17px;
-      font-weight: 700;
-    }
-
-    .app-title p {
-      margin: 2px 0 0;
-      font-size: 12px;
-      opacity: 0.9;
-    }
+    .app-title h1 { margin: 0; font-size: 17px; font-weight: 700; }
+    .app-title p { margin: 2px 0 0; font-size: 12px; opacity: 0.9; }
 
     .header-actions {
       display: flex;
@@ -122,11 +115,7 @@
       gap: 10px;
     }
 
-    .tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
+    .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
 
     .tab-btn {
       background: #e2e8f0;
@@ -146,12 +135,7 @@
       box-shadow: 0 2px 5px rgba(26,79,139,0.3);
     }
 
-    .sub-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      align-items: center;
-    }
+    .sub-tabs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 
     .sub-btn {
       background: #f8fafc;
@@ -216,18 +200,8 @@
       gap: 8px 12px;
     }
 
-    .field-group {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-
-    .field-group label {
-      font-size: 11px;
-      font-weight: 700;
-      color: #475569;
-    }
-
+    .field-group { display: flex; flex-direction: column; gap: 3px; }
+    .field-group label { font-size: 11px; font-weight: 700; color: #475569; }
     .field-group input,
     .field-group select {
       padding: 5px 8px;
@@ -238,16 +212,8 @@
       background: #fff;
     }
 
-    .enrollment-inline {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .enrollment-inline input {
-      width: 52px;
-      text-align: center;
-    }
+    .enrollment-inline { display: flex; align-items: center; gap: 4px; }
+    .enrollment-inline input { width: 52px; text-align: center; }
 
     .action-bar {
       display: flex;
@@ -260,10 +226,7 @@
     }
 
     /* Main Sheet Container */
-    .sheet-wrapper {
-      padding: 14px;
-      overflow-x: auto;
-    }
+    .sheet-wrapper { padding: 14px; overflow-x: auto; }
 
     .a4-sheet {
       background: #fff;
@@ -275,18 +238,10 @@
       max-width: 1380px;
     }
 
-    .a4-sheet.maths-sheet {
-      min-width: 1220px;
-      max-width: 1520px;
-    }
+    .a4-sheet.maths-sheet { min-width: 1220px; max-width: 1520px; }
 
     /* Official Form Typography & Borders */
-    .gov-header {
-      text-align: center;
-      line-height: 1.3;
-      margin-bottom: 4px;
-    }
-
+    .gov-header { text-align: center; line-height: 1.3; margin-bottom: 4px; }
     .gov-header .h-l1 { font-size: 12px; font-weight: 700; }
     .gov-header .h-l2 { font-size: 11px; font-weight: 700; }
     .gov-header .h-l3 { font-size: 9.5px; font-weight: 600; }
@@ -303,11 +258,7 @@
       border-bottom: 1px solid #000;
       background: #f8fafc;
     }
-    .gov-header .h-annex {
-      font-size: 11px;
-      font-weight: 700;
-      margin-top: 2px;
-    }
+    .gov-header .h-annex { font-size: 11px; font-weight: 700; margin-top: 2px; }
     .gov-header .h-subtitle {
       font-size: 10.5px;
       font-weight: 700;
@@ -345,9 +296,7 @@
       margin-top: 3px;
     }
 
-    table.fln-table.maths-table {
-      font-size: 8px;
-    }
+    table.fln-table.maths-table { font-size: 8px; }
 
     table.fln-table th,
     table.fln-table td {
@@ -359,10 +308,7 @@
       overflow-wrap: break-word;
     }
 
-    table.fln-table th {
-      font-weight: 700;
-      line-height: 1.15;
-    }
+    table.fln-table th { font-weight: 700; line-height: 1.15; }
 
     .bg-yellow { background-color: var(--yellow) !important; }
     .bg-cream { background-color: var(--cream) !important; }
@@ -371,7 +317,6 @@
 
     .text-left { text-align: left !important; padding-left: 4px !important; }
 
-    /* Editable Inputs Inside Table */
     .cell-input-name {
       width: 100%;
       border: 1px solid transparent;
@@ -415,9 +360,7 @@
       border-radius: 2px;
     }
 
-    .grade-select:focus {
-      outline: 2px solid #2563eb;
-    }
+    .grade-select:focus { outline: 2px solid #2563eb; }
 
     .grade-A {
       background-color: var(--grade-a-bg) !important;
@@ -431,19 +374,9 @@
       font-weight: 700;
     }
 
-    .auto-cell {
-      font-weight: 700;
-    }
-
-    .total-row td {
-      font-weight: 700;
-      background: #fafafa;
-    }
-
-    .grand-total-row td {
-      font-weight: 700;
-      background: var(--blue-soft);
-    }
+    .auto-cell { font-weight: 700; }
+    .total-row td { font-weight: 700; background: #fafafa; }
+    .grand-total-row td { font-weight: 700; background: var(--blue-soft); }
 
     .notes-box {
       margin-top: 6px;
@@ -453,19 +386,9 @@
       line-height: 1.35;
     }
 
-    .notes-box h4 {
-      margin: 0 0 3px;
-      font-size: 9.5px;
-    }
-
-    .notes-box ol {
-      margin: 0;
-      padding-left: 16px;
-    }
-
-    .notes-box p {
-      margin: 2px 0;
-    }
+    .notes-box h4 { margin: 0 0 3px; font-size: 9.5px; }
+    .notes-box ol { margin: 0; padding-left: 16px; }
+    .notes-box p { margin: 2px 0; }
 
     .sig-footer {
       display: flex;
@@ -477,10 +400,7 @@
       font-weight: 700;
     }
 
-    .sig-box {
-      text-align: center;
-      min-width: 110px;
-    }
+    .sig-box { text-align: center; min-width: 110px; }
 
     /* Modals */
     .modal-backdrop {
@@ -494,16 +414,14 @@
       padding: 16px;
     }
 
-    .modal-backdrop.open {
-      display: flex;
-    }
+    .modal-backdrop.open { display: flex; }
 
     .modal {
       background: #fff;
       border-radius: 10px;
       width: 100%;
-      max-width: 650px;
-      max-height: 90vh;
+      max-width: 720px;
+      max-height: 92vh;
       overflow-y: auto;
       box-shadow: 0 10px 30px rgba(0,0,0,0.25);
       padding: 18px;
@@ -518,20 +436,50 @@
       margin-bottom: 12px;
     }
 
-    .modal-header h3 {
-      margin: 0;
-      font-size: 16px;
-    }
+    .modal-header h3 { margin: 0; font-size: 16px; }
 
     .modal textarea {
       width: 100%;
-      min-height: 160px;
+      min-height: 135px;
       padding: 8px;
       border: 1px solid #cbd5e1;
       border-radius: 6px;
       font-family: inherit;
-      font-size: 13px;
+      font-size: 12.5px;
     }
+
+    .import-preview-box {
+      margin-top: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #f8fafc;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+
+    .import-preview-list {
+      max-height: 150px;
+      overflow-y: auto;
+      margin-top: 6px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+    }
+
+    .import-preview-list table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+    }
+
+    .import-preview-list th,
+    .import-preview-list td {
+      border-bottom: 1px solid #e2e8f0;
+      padding: 4px 8px;
+      text-align: left;
+    }
+
+    .import-preview-list th { background: #f1f5f9; position: sticky; top: 0; }
 
     .info-table {
       width: 100%;
@@ -547,10 +495,7 @@
       vertical-align: top;
     }
 
-    .info-table th {
-      background: #fff2cc;
-      font-weight: 700;
-    }
+    .info-table th { background: #fff2cc; font-weight: 700; }
 
     .validation-strip {
       margin-top: 6px;
@@ -569,10 +514,7 @@
 
     /* Print Rules for A4 Landscape */
     @media print {
-      @page {
-        size: A4 landscape;
-        margin: 5mm;
-      }
+      @page { size: A4 landscape; margin: 5mm; }
 
       body {
         background: #fff !important;
@@ -582,14 +524,8 @@
         print-color-adjust: exact !important;
       }
 
-      .no-print {
-        display: none !important;
-      }
-
-      .sheet-wrapper {
-        padding: 0 !important;
-        overflow: visible !important;
-      }
+      .no-print { display: none !important; }
+      .sheet-wrapper { padding: 0 !important; overflow: visible !important; }
 
       .a4-sheet,
       .a4-sheet.maths-sheet {
@@ -610,23 +546,11 @@
       .gov-header .h-annex,
       .gov-header .h-subtitle { font-size: 8pt; }
 
-      .form-meta-bar {
-        font-size: 7.5pt;
-        padding: 2px 4px;
-      }
+      .form-meta-bar { font-size: 7.5pt; padding: 2px 4px; }
 
-      table.fln-table {
-        font-size: 6.8pt !important;
-      }
-
-      table.fln-table.maths-table {
-        font-size: 5.7pt !important;
-      }
-
-      table.fln-table th,
-      table.fln-table td {
-        padding: 1.5px 1px !important;
-      }
+      table.fln-table { font-size: 6.8pt !important; }
+      table.fln-table.maths-table { font-size: 5.7pt !important; }
+      table.fln-table th, table.fln-table td { padding: 1.5px 1px !important; }
 
       select.grade-select,
       select.cell-select-gender {
@@ -641,38 +565,14 @@
         color: #000 !important;
       }
 
-      .cell-input-name {
-        border: none !important;
-        padding: 0 1px !important;
-      }
+      .cell-input-name { border: none !important; padding: 0 1px !important; }
 
-      .notes-box {
-        font-size: 6.8pt !important;
-        padding: 3px 5px !important;
-        page-break-inside: avoid;
-      }
-
-      .notes-box h4 {
-        font-size: 7.2pt !important;
-      }
-
-      .sig-footer {
-        font-size: 7.5pt !important;
-        margin-top: 14px !important;
-        page-break-inside: avoid;
-      }
-
-      tr {
-        page-break-inside: avoid;
-      }
-
-      thead {
-        display: table-header-group;
-      }
-
-      .page-break {
-        page-break-before: always;
-      }
+      .notes-box { font-size: 6.8pt !important; padding: 3px 5px !important; page-break-inside: avoid; }
+      .notes-box h4 { font-size: 7.2pt !important; }
+      .sig-footer { font-size: 7.5pt !important; margin-top: 14px !important; page-break-inside: avoid; }
+      tr { page-break-inside: avoid; }
+      thead { display: table-header-group; }
+      .page-break { page-break-before: always; }
     }
   </style>
 </head>
@@ -755,7 +655,7 @@
         <input type="text" id="metaClassRange" oninput="updateMeta('classRange', this.value)" placeholder="ಉದಾ: 4 ರಿಂದ 10" />
       </div>
       <div class="field-group" id="teacherFieldGroup">
-        <label id="teacherLabel">ಶಿಕ್ಷಕರ ಹೆಸರು (ತರಗತಿ & ವಿಷಯ)</label>
+        <label id="teacherLabel">ಶಿಕ್ಷಕರ ಹೆಸರು (ತರಗತಿ &amp; ವಿಷಯ)</label>
         <input type="text" id="metaTeacher" oninput="updateClassTeacher(this.value)" placeholder="ವಿಷಯ ಶಿಕ್ಷಕರ ಹೆಸರು" />
       </div>
       <div class="field-group" id="enrollmentFieldGroup">
@@ -775,7 +675,7 @@
     <div class="action-bar" id="annex1ActionBar">
       <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
         <button class="btn btn-success" onclick="addStudent()">+ ವಿದ್ಯಾರ್ಥಿ ಸೇರಿಸಿ</button>
-        <button class="btn btn-primary" onclick="openImportModal()">📥 Import ಮಕ್ಕಳು (CSV / Excel Paste)</button>
+        <button class="btn btn-primary" onclick="openImportModal()">📥 SATS / Excel Import ಮಾಡಿ</button>
         <button class="btn btn-teal" onclick="openCopyModal()">👥 ಬೇರೆ ವಿಷಯದಿಂದ ಹೆಸರು Copy ಮಾಡಿ</button>
         <button class="btn btn-light" onclick="openQuickGradeModal()">⚡ Quick Fill A/B</button>
         <button class="btn btn-danger" onclick="deleteSelectedStudents()">🗑️ ಆಯ್ಕೆ ಮಾಡಿದವರನ್ನು Delete ಮಾಡಿ</button>
@@ -789,32 +689,46 @@
   <!-- Main Printable / View Area -->
   <main class="sheet-wrapper" id="mainContainer"></main>
 
-  <!-- Import Modal -->
+  <!-- Smart SATS / Excel Import Modal -->
   <div class="modal-backdrop" id="importModal">
     <div class="modal">
       <div class="modal-header">
-        <h3>📥 ಮಕ್ಕಳನ್ನು Import ಮಾಡಿ (<span id="importClassTitle"></span>)</h3>
+        <h3>📥 SATS / Excel ನಿಂದ ಮಕ್ಕಳನ್ನು Import ಮಾಡಿ (<span id="importClassTitle"></span>)</h3>
         <button class="btn btn-light btn-sm" onclick="closeModal('importModal')">✕</button>
       </div>
       <p style="margin-top:0; font-size:12.5px; color:#334155;">
-        Excel ಅಥವಾ SATS ನಿಂದ ಹೆಸರು ಮತ್ತು ಲಿಂಗವನ್ನು ನೇರವಾಗಿ Copy-Paste ಮಾಡಿ (ಅಥವಾ CSV ಫೈಲ್ ಆಯ್ಕೆ ಮಾಡಿ):<br/>
-        <strong>ಮಾದರಿ:</strong> <code>ರಮೇಶ್, ಗಂಡು</code> ಅಥವಾ <code>Sita [Tab] Girl</code> ಅಥವಾ ಕೇವಲ ಹೆಸರುಗಳು ಸಾಲು ಸಾಲಾಗಿ.
+        <strong>SATS ನಿಂದ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ Excel (<code>.xlsx</code>, <code>.xls</code>, <code>.csv</code>) ಫೈಲ್ ಅನ್ನು ನೇರವಾಗಿ ಆರಿಸಿ</strong> ಅಥವಾ Excel ನಿಂದ ಮಕ್ಕಳ ಸಾಲುಗಳನ್ನು Copy ಮಾಡಿ ಕೆಳಗಿನ ಬಾಕ್ಸ್‌ನಲ್ಲಿ Paste ಮಾಡಿ.<br/>
+        <code>Student Name</code> ಹಾಗೂ <code>Gender (BOY / GIRL / ಗಂಡು / ಹೆಣ್ಣು)</code> ತಾನಾಗಿಯೇ ಬೇರ್ಪಡುತ್ತದೆ!
       </p>
       <div style="margin-bottom:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-        <label class="btn btn-light btn-sm" style="cursor:pointer;">
-          📄 CSV / TXT ಫೈಲ್ ಆರಿಸಿ
-          <input type="file" id="csvImportFile" accept=".csv,.txt,.tsv" style="display:none" onchange="handleCSVFile(event)" />
+        <label class="btn btn-primary btn-sm" style="cursor:pointer;">
+          📊 SATS Excel / CSV ಫೈಲ್ ಆರಿಸಿ (.xlsx / .xls / .csv)
+          <input type="file" id="csvImportFile" accept=".xlsx,.xls,.csv,.txt,.tsv" style="display:none" onchange="handleImportFile(event)" />
         </label>
         <select id="importMode" style="padding:5px 8px; border-radius:5px; border:1px solid #cbd5e1; font-family:inherit;">
           <option value="append">ಹಾಲಿ ಪಟ್ಟಿಗೆ ಸೇರಿಸಿ (Append)</option>
           <option value="replace">ಹಳೆಯ ಪಟ್ಟಿ ತೆಗೆದು ಹೊಸದು ಹಾಕಿ (Replace)</option>
         </select>
-        <select id="importDefaultGender" style="padding:5px 8px; border-radius:5px; border:1px solid #cbd5e1; font-family:inherit;">
+        <select id="importDefaultGender" onchange="updateImportPreview()" style="padding:5px 8px; border-radius:5px; border:1px solid #cbd5e1; font-family:inherit;">
           <option value="M">ಲಿಂಗ ಇಲ್ಲದಿದ್ದರೆ: ಗಂಡು (Boy)</option>
           <option value="F">ಲಿಂಗ ಇಲ್ಲದಿದ್ದರೆ: ಹೆಣ್ಣು (Girl)</option>
         </select>
       </div>
-      <textarea id="importTextarea" placeholder="ರಮೇಶ್, ಗಂಡು&#10;ಸೀತಾ, ಹೆಣ್ಣು&#10;Kiran	Boy&#10;Priya	Girl"></textarea>
+
+      <textarea id="importTextarea" oninput="onImportTextareaChange()" placeholder="SATS Excel ನಿಂದ ನೇರವಾಗಿ Copy-Paste ಮಾಡಿ ಉದಾ:&#10;1	224 855 882	ANANYA GOPAL LATTI	27-03-2016	GIRL&#10;2	212 001 338	BALAKRISHNA RAMESH BUDRI	10-05-2016	BOY&#10;ಅಥವಾ: ರಮೇಶ್, ಗಂಡು"></textarea>
+
+      <div id="importPreviewBox" class="import-preview-box" style="display:none;">
+        <div id="importPreviewSummary" style="font-weight:700; color:#166534;"></div>
+        <div class="import-preview-list" id="importPreviewTable"></div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <label style="font-size:12.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="importAllSubjectsCheck" />
+          ಈ ತರಗತಿಯ ಕನ್ನಡ, English ಮತ್ತು ಗಣಿತ — 3 ವಿಷಯಗಳಿಗೂ ಒಟ್ಟಿಗೆ Import ಮಾಡಿ
+        </label>
+      </div>
+
       <div style="margin-top:12px; display:flex; justify-content:flex-end; gap:8px;">
         <button class="btn btn-light" onclick="closeModal('importModal')">ರದ್ದು (Cancel)</button>
         <button class="btn btn-success" onclick="executeImport()">Import ಮಾಡಿ</button>
@@ -877,8 +791,6 @@
       4: '4th', 5: '5th', 6: '6th', 7: '7th', 8: '8th', 9: '9th', 10: '10th'
     };
 
-    // Column Specs for Calculation
-    // Kannada & English Annexure-1 columns: 3..20
     const LANG_INPUT_COLS = [3, 4, 5, 6, 7, 9, 10, 11, 13, 14, 15, 17, 18];
     const LANG_AUTO_RULES = [
       { target: 8,  deps: [3, 4, 5, 6, 7] },
@@ -887,11 +799,8 @@
       { target: 19, deps: [17, 18] },
       { target: 20, deps: [8, 12, 16, 19] }
     ];
-    // Mapping from Annexure-1 (cols 3..20) -> Annexure-2 (cols 3..18)
-    // Notice Annexure-2 omits oral cols 11 and 15 from Annexure-1
     const LANG_A1_TO_A2 = [3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 17, 18, 19, 20];
 
-    // Maths Annexure-1 columns: 3..31
     const MATH_INPUT_COLS = [
       3, 4, 5, 6,
       8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
@@ -905,7 +814,6 @@
       { target: 30, deps: [25, 26, 27, 28, 29] },
       { target: 31, deps: [7, 18, 24, 30] }
     ];
-    // Maths Annexure-1 -> Annexure-2 is exact 1:1 (cols 3..31)
     const MATH_A1_TO_A2 = Array.from({ length: 29 }, (_, i) => i + 3);
 
     // =========================================================================
@@ -945,6 +853,7 @@
 
     let state = loadState();
     let selectedIds = new Set();
+    let pendingImportRows = null; // 2D array from uploaded Excel or parsed text
 
     function loadState() {
       try {
@@ -1114,7 +1023,6 @@
     function addStudent() {
       const list = state.data[state.activeSubj][state.activeClass];
       list.push({ id: uid(), name: '', gender: 'M', grades: {} });
-      // Auto-adjust enrollment if enrollment was 0 or matching previous count
       const e = state.enrollment[state.activeClass];
       if (e.boys + e.girls === list.length - 1) {
         syncEnrollmentFromStudents(true);
@@ -1122,7 +1030,6 @@
       saveState();
       renderControls();
       renderSheet();
-      // Focus last added name input
       setTimeout(() => {
         const inputs = document.querySelectorAll('.cell-input-name');
         if (inputs.length) inputs[inputs.length - 1].focus();
@@ -1162,7 +1069,6 @@
         e.preventDefault();
         e.target.value = key;
         updateStudentGrade(id, col, key);
-        // Move focus to next grade select in same row
         const row = e.target.closest('tr');
         const selects = Array.from(row.querySelectorAll('select.grade-select'));
         const idx = selects.indexOf(e.target);
@@ -1199,7 +1105,6 @@
           }
         });
       }
-      // Update footer totals
       const stats = getClassStats(subj, cls);
       const colMax = subj === 'math' ? 31 : 20;
       for (let c = 3; c <= colMax; c++) {
@@ -1210,7 +1115,6 @@
           });
         });
       }
-      // Update validation strip
       renderValidationStrip(stats);
     }
 
@@ -1251,12 +1155,15 @@
     }
 
     // =========================================================================
-    // MODALS: IMPORT, COPY NAMES, QUICK FILL
+    // SMART SATS / EXCEL IMPORT ENGINE
     // =========================================================================
     function openImportModal() {
       document.getElementById('importClassTitle').textContent = `${CLASS_LABELS_KN[state.activeClass]} - ${subjectTitleShort(state.activeSubj)}`;
       document.getElementById('importTextarea').value = '';
       document.getElementById('csvImportFile').value = '';
+      document.getElementById('importAllSubjectsCheck').checked = false;
+      pendingImportRows = null;
+      document.getElementById('importPreviewBox').style.display = 'none';
       document.getElementById('importModal').classList.add('open');
     }
 
@@ -1264,68 +1171,250 @@
       document.getElementById(id).classList.remove('open');
     }
 
-    function handleCSVFile(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = e => {
-        document.getElementById('importTextarea').value = e.target.result;
-      };
-      reader.readAsText(file, 'UTF-8');
+    function isGenderToken(tok) {
+      if (!tok) return false;
+      const t = String(tok).trim().toLowerCase();
+      return ['f', 'female', 'girl', 'girls', 'g', 'ಹೆಣ್ಣು', 'ಹೆ', 'ಬಾಲಕಿ',
+              'm', 'male', 'boy', 'boys', 'b', 'ಗಂಡು', 'ಗಂ', 'ಬಾಲಕ'].includes(t);
     }
 
     function parseGenderToken(tok, def) {
       if (!tok) return def;
-      const t = tok.trim().toLowerCase();
+      const t = String(tok).trim().toLowerCase();
       if (['f', 'female', 'girl', 'girls', 'g', 'ಹೆಣ್ಣು', 'ಹೆ', 'ಬಾಲಕಿ'].includes(t)) return 'F';
       if (['m', 'male', 'boy', 'boys', 'b', 'ಗಂಡು', 'ಗಂ', 'ಬಾಲಕ'].includes(t)) return 'M';
       return def;
     }
 
-    function executeImport() {
-      const text = document.getElementById('importTextarea').value.trim();
-      if (!text) {
-        alert('ದಯವಿಟ್ಟು ವಿದ್ಯಾರ್ಥಿಗಳ ಹೆಸರುಗಳನ್ನು ನಮೂದಿಸಿ.');
-        return;
-      }
-      const mode = document.getElementById('importMode').value;
-      const defGender = document.getElementById('importDefaultGender').value;
-      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-      const imported = [];
+    function isLikelyDate(tok) {
+      const s = String(tok).trim();
+      return /^\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}$/.test(s);
+    }
 
-      lines.forEach((line, idx) => {
-        const parts = line.includes('\t') ? line.split('\t') : line.split(',');
-        const cleanParts = parts.map(p => p.replace(/^["']|["']$/g, '').trim());
-        // Skip header row if detected
-        if (idx === 0 && /^(sl|ಕ್ರ|name|ಹೆಸರು|student)/i.test(cleanParts[0])) return;
+    function isLikelyNumberOrID(tok) {
+      const s = String(tok).trim();
+      // Matches serial numbers "1", enrollment IDs "224 855 882" or "224855882", standards "4"
+      return /^[\d\s.,-]+$/.test(s);
+    }
+
+    function isMetadataOrJunkLine(row) {
+      const joined = row.join(' ').trim();
+      if (!joined) return true;
+      if (/^(gender\s*:|caste\s*:|academic year|school\s*:|cluster\s*:|total\s*:)/i.test(joined)) return true;
+      return false;
+    }
+
+    function parseRowsToStudents(rows2D, defGender) {
+      let nameColIdx = -1;
+      let genderColIdx = -1;
+      let headerRowIdx = -1;
+
+      // Step 1: Detect SATS / Excel header row within first 15 rows
+      for (let r = 0; r < Math.min(rows2D.length, 15); r++) {
+        const row = rows2D[r].map(c => String(c ?? '').trim());
+        const foundName = row.findIndex(c => /^(student\s*name|name\s*of\s*(the\s*)?student|name|ವಿದ್ಯಾರ್ಥಿಯ\s*ಹೆಸರು|ಹೆಸರು)$/i.test(c));
+        const foundGender = row.findIndex(c => /^(gender|sex|ಲಿಂಗ|boy\/girl)$/i.test(c));
+        if (foundName !== -1) {
+          headerRowIdx = r;
+          nameColIdx = foundName;
+          genderColIdx = foundGender;
+          break;
+        }
+      }
+
+      const students = [];
+      const startRow = headerRowIdx !== -1 ? headerRowIdx + 1 : 0;
+
+      for (let r = startRow; r < rows2D.length; r++) {
+        const row = rows2D[r].map(c => String(c ?? '').trim());
+        if (isMetadataOrJunkLine(row)) continue;
 
         let name = '';
         let gender = defGender;
-        // Support "1, Name, Gender" or "Name, Gender" or "Name"
-        if (cleanParts.length >= 3 && /^\d+$/.test(cleanParts[0])) {
-          name = cleanParts[1];
-          gender = parseGenderToken(cleanParts[2], defGender);
-        } else if (cleanParts.length >= 2) {
-          name = cleanParts[0];
-          gender = parseGenderToken(cleanParts[1], defGender);
-        } else {
-          name = cleanParts[0];
-        }
-        if (name) {
-          imported.push({ id: uid(), name, gender, grades: {} });
-        }
-      });
 
+        if (headerRowIdx !== -1 && nameColIdx !== -1) {
+          name = row[nameColIdx] || '';
+          if (genderColIdx !== -1 && row[genderColIdx]) {
+            gender = parseGenderToken(row[genderColIdx], defGender);
+          } else {
+            // Search any cell in row for gender token just in case
+            const gCell = row.find(c => isGenderToken(c));
+            if (gCell) gender = parseGenderToken(gCell, defGender);
+          }
+          // Skip repeated header rows if any
+          if (/^(student\s*name|name|ವಿದ್ಯಾರ್ಥಿಯ\s*ಹೆಸರು|ಹೆಸರು)$/i.test(name)) continue;
+        } else {
+          // Smart auto-detection when pasted WITHOUT header row (e.g. direct rows from SATS Excel or "Name, Gender")
+          const gCell = row.find(c => isGenderToken(c));
+          if (gCell) gender = parseGenderToken(gCell, defGender);
+
+          // Find best candidate for Student Name:
+          // Not empty, not pure number/ID, not date, not gender token, not standard like "4th"/"5th"
+          const nameCandidates = row.filter(c => {
+            if (!c) return false;
+            if (isGenderToken(c)) return false;
+            if (isLikelyDate(c)) return false;
+            if (isLikelyNumberOrID(c)) return false;
+            if (/^\d{1,2}(st|nd|rd|th)?$/i.test(c)) return false;
+            if (/^(sl\.?\s*no|sr\.?\s*no|enrollment|dob|date\s*of\s*birth|standard|class)$/i.test(c)) return false;
+            return true;
+          });
+
+          if (nameCandidates.length > 0) {
+            // Pick the longest alphabetic/Kannada text cell (usually full name like "ANANYA GOPAL LATTI")
+            name = nameCandidates.sort((a, b) => b.length - a.length)[0];
+          }
+        }
+
+        // Clean extra spaces inside name
+        name = name.replace(/\s+/g, ' ').trim();
+        if (name && !isLikelyNumberOrID(name) && !isGenderToken(name)) {
+          students.push({ id: uid(), name, gender, grades: {} });
+        }
+      }
+
+      return students;
+    }
+
+    function textToRows2D(text) {
+      const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+      return lines.map(line => {
+        if (line.includes('\t')) {
+          return line.split('\t').map(c => c.replace(/^["']|["']$/g, '').trim());
+        }
+        // Smart CSV split respecting quotes
+        const cells = [];
+        let cur = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') {
+            inQuotes = !inQuotes;
+          } else if (ch === ',' && !inQuotes) {
+            cells.push(cur.trim());
+            cur = '';
+          } else {
+            cur += ch;
+          }
+        }
+        cells.push(cur.trim());
+        return cells;
+      });
+    }
+
+    function handleImportFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const ext = file.name.split('.').pop().toLowerCase();
+      if ((ext === 'xlsx' || ext === 'xls') && typeof XLSX !== 'undefined') {
+        const reader = new FileReader();
+        reader.onload = e => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows2D = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: false, defval: '' });
+            pendingImportRows = rows2D;
+            // Also show readable preview in textarea
+            document.getElementById('importTextarea').value = rows2D
+              .filter(r => r.some(c => String(c).trim() !== ''))
+              .map(r => r.join('\t'))
+              .join('\n');
+            updateImportPreview();
+          } catch (err) {
+            alert('Excel ಫೈಲ್ ಓದುವಲ್ಲಿ ದೋಷ ಕಂಡುಬಂದಿದೆ. ದಯವಿಟ್ಟು Excel ನಿಂದ Copy-Paste ಮಾಡಿ ನೋಡಿ.');
+            console.error(err);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        // Fallback for CSV / TXT / HTML-based .xls when offline
+        const reader = new FileReader();
+        reader.onload = e => {
+          const content = e.target.result;
+          if (/<table/i.test(content)) {
+            // SATS sometimes exports HTML table saved as .xls
+            const doc = new DOMParser().parseFromString(content, 'text/html');
+            const rows2D = Array.from(doc.querySelectorAll('tr')).map(tr =>
+              Array.from(tr.querySelectorAll('th, td')).map(td => td.textContent.trim())
+            );
+            pendingImportRows = rows2D;
+            document.getElementById('importTextarea').value = rows2D.map(r => r.join('\t')).join('\n');
+          } else {
+            pendingImportRows = null;
+            document.getElementById('importTextarea').value = content;
+          }
+          updateImportPreview();
+        };
+        reader.readAsText(file, 'UTF-8');
+      }
+    }
+
+    function onImportTextareaChange() {
+      pendingImportRows = null;
+      updateImportPreview();
+    }
+
+    function getParsedImportStudents() {
+      const defGender = document.getElementById('importDefaultGender').value;
+      if (pendingImportRows) {
+        return parseRowsToStudents(pendingImportRows, defGender);
+      }
+      const text = document.getElementById('importTextarea').value.trim();
+      if (!text) return [];
+      const rows2D = textToRows2D(text);
+      return parseRowsToStudents(rows2D, defGender);
+    }
+
+    function updateImportPreview() {
+      const box = document.getElementById('importPreviewBox');
+      const students = getParsedImportStudents();
+      if (students.length === 0) {
+        box.style.display = 'none';
+        return;
+      }
+      box.style.display = 'block';
+      const boys = students.filter(s => s.gender === 'M').length;
+      const girls = students.filter(s => s.gender === 'F').length;
+      document.getElementById('importPreviewSummary').textContent =
+        `✓ ಒಟ್ಟು ${students.length} ವಿದ್ಯಾರ್ಥಿಗಳು ಪತ್ತೆಯಾಗಿದ್ದಾರೆ (ಗಂಡು / Boy: ${boys}, ಹೆಣ್ಣು / Girl: ${girls})`;
+
+      const rowsHtml = students.slice(0, 50).map((s, i) => `
+        <tr>
+          <td style="width:45px;">${i + 1}</td>
+          <td>${esc(s.name)}</td>
+          <td style="width:90px;">${s.gender === 'F' ? 'ಹೆಣ್ಣು (Girl)' : 'ಗಂಡು (Boy)'}</td>
+        </tr>
+      `).join('');
+      const moreNote = students.length > 50 ? `<tr><td colspan="3" style="text-align:center; color:#64748b;">... ಇನ್ನೂ ${students.length - 50} ವಿದ್ಯಾರ್ಥಿಗಳು ...</td></tr>` : '';
+      document.getElementById('importPreviewTable').innerHTML = `
+        <table>
+          <thead><tr><th>ಕ್ರ.ಸಂ.</th><th>ವಿದ್ಯಾರ್ಥಿಯ ಹೆಸರು</th><th>ಲಿಂಗ</th></tr></thead>
+          <tbody>${rowsHtml}${moreNote}</tbody>
+        </table>
+      `;
+    }
+
+    function executeImport() {
+      const imported = getParsedImportStudents();
       if (imported.length === 0) {
-        alert('ಯಾವುದೇ ಮಾನ್ಯ ಹೆಸರುಗಳು ಕಂಡುಬಂದಿಲ್ಲ.');
+        alert('ಯಾವುದೇ ಮಾನ್ಯ ವಿದ್ಯಾರ್ಥಿಗಳ ಹೆಸರು ಕಂಡುಬಂದಿಲ್ಲ. SATS Excel ಫೈಲ್ ಆರಿಸಿ ಅಥವಾ Copy-Paste ಮಾಡಿ.');
         return;
       }
 
-      if (mode === 'replace') {
-        state.data[state.activeSubj][state.activeClass] = imported;
-      } else {
-        state.data[state.activeSubj][state.activeClass].push(...imported);
-      }
+      const mode = document.getElementById('importMode').value;
+      const allSubj = document.getElementById('importAllSubjectsCheck').checked;
+      const targetSubjs = allSubj ? ['kn', 'en', 'math'] : [state.activeSubj];
+
+      targetSubjs.forEach(subj => {
+        const cloned = imported.map(s => ({ id: uid(), name: s.name, gender: s.gender, grades: {} }));
+        if (mode === 'replace') {
+          state.data[subj][state.activeClass] = cloned;
+        } else {
+          state.data[subj][state.activeClass].push(...cloned);
+        }
+      });
 
       syncEnrollmentFromStudents(true);
       saveState();
@@ -1453,8 +1542,8 @@
             cols.forEach((c, ci) => {
               grades[c] = (idx % 2 === 0 || ci < cols.length - 2) ? (idx === 1 && ci % 5 === 0 ? 'B' : 'A') : 'B';
             });
-            if (idx === 0) cols.forEach(c => grades[c] = 'A'); // All A student
-            if (idx === 3) cols.forEach(c => grades[c] = 'A'); // All A girl
+            if (idx === 0) cols.forEach(c => grades[c] = 'A');
+            if (idx === 3) cols.forEach(c => grades[c] = 'A');
             return { id: uid(), name: `${name} (${cls}ನೇ)`, gender, grades };
           });
         });
@@ -1466,9 +1555,7 @@
     // =========================================================================
     // PRINT HELPERS
     // =========================================================================
-    function printCurrent() {
-      window.print();
-    }
+    function printCurrent() { window.print(); }
 
     function printAllClassesForSubject() {
       if (state.activeTab !== 'annex1') {
@@ -1514,11 +1601,9 @@
     }
 
     function renderControls() {
-      // Tabs
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === state.activeTab);
       });
-      // Subject bar visibility
       const isFormTab = state.activeTab === 'annex1' || state.activeTab === 'annex2';
       document.getElementById('subjectBar').style.display = isFormTab ? 'flex' : 'none';
       document.getElementById('classBar').style.display = state.activeTab === 'annex1' ? 'flex' : 'none';
@@ -1531,14 +1616,12 @@
         btn.classList.toggle('active', btn.dataset.subj === state.activeSubj);
       });
 
-      // Class pills
       const pillsEl = document.getElementById('classPills');
       pillsEl.innerHTML = CLASSES.map(c => {
         const cnt = (state.data[state.activeSubj][c] || []).length;
         return `<button class="class-pill ${c === state.activeClass ? 'active' : ''}" onclick="switchClass(${c})">${c} ನೇ ತರಗತಿ <span class="badge-cnt">${cnt}</span></button>`;
       }).join('');
 
-      // Meta inputs
       document.getElementById('metaSchool').value = state.meta.schoolName || '';
       document.getElementById('metaCluster').value = state.meta.cluster || '';
       document.getElementById('metaTaluk').value = state.meta.taluk || '';
@@ -1556,7 +1639,6 @@
     }
 
     function updateFormHeaderDisplay() {
-      // Re-render only header fields cleanly without losing input focus
       if (state.activeTab === 'annex1') {
         const el = document.getElementById('annex1FormMeta');
         if (el) el.innerHTML = buildAnnex1MetaInnerHTML(state.activeSubj, state.activeClass);
@@ -1724,7 +1806,6 @@
       const students = state.data[subj][cls] || [];
       const stats = getClassStats(subj, cls);
 
-      // Column widths (% summing to 100 for print accuracy)
       const colGroupHTML = `
         <colgroup>
           <col class="no-print" style="width:22px" />
@@ -1895,7 +1976,7 @@
       `;
 
       const rowsHTML = students.length === 0
-        ? `<tr><td colspan="23" style="padding:18px; color:#64748b; font-size:12px;">ಈ ತರಗತಿಯಲ್ಲಿ ಇನ್ನೂ ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು ಸೇರಿಸಿಲ್ಲ. ಮೇಲಿನ <strong>"+ ವಿದ್ಯಾರ್ಥಿ ಸೇರಿಸಿ"</strong> ಅಥವಾ <strong>"📥 Import ಮಕ್ಕಳು"</strong> ಬಟನ್ ಬಳಸಿ.</td></tr>`
+        ? `<tr><td colspan="23" style="padding:18px; color:#64748b; font-size:12px;">ಈ ತರಗತಿಯಲ್ಲಿ ಇನ್ನೂ ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು ಸೇರಿಸಿಲ್ಲ. ಮೇಲಿನ <strong>"+ ವಿದ್ಯಾರ್ಥಿ ಸೇರಿಸಿ"</strong> ಅಥವಾ <strong>"📥 SATS / Excel Import ಮಾಡಿ"</strong> ಬಟನ್ ಬಳಸಿ.</td></tr>`
         : students.map((st, idx) => {
             const comp = computeStudentGrades(st, subj);
             const gLabelM = isEn ? 'Boy' : 'ಗಂಡು';
@@ -2020,7 +2101,6 @@
       const students = state.data.math[cls] || [];
       const stats = getClassStats('math', cls);
 
-      // 32 official columns: 1(2.2%), 2(9.0%), *(3.1%), 29 cols(2.95% each) = 14.3 + 85.55 = ~100%
       const colGroupHTML = `
         <colgroup>
           <col class="no-print" style="width:20px" />
@@ -2157,7 +2237,7 @@
       `;
 
       const rowsHTML = students.length === 0
-        ? `<tr><td colspan="34" style="padding:18px; color:#64748b; font-size:12px;">ಈ ತರಗತಿಯಲ್ಲಿ ಇನ್ನೂ ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು ಸೇರಿಸಿಲ್ಲ. ಮೇಲಿನ <strong>"+ ವಿದ್ಯಾರ್ಥಿ ಸೇರಿಸಿ"</strong> ಅಥವಾ <strong>"📥 Import ಮಕ್ಕಳು"</strong> ಬಟನ್ ಬಳಸಿ.</td></tr>`
+        ? `<tr><td colspan="34" style="padding:18px; color:#64748b; font-size:12px;">ಈ ತರಗತಿಯಲ್ಲಿ ಇನ್ನೂ ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು ಸೇರಿಸಿಲ್ಲ. ಮೇಲಿನ <strong>"+ ವಿದ್ಯಾರ್ಥಿ ಸೇರಿಸಿ"</strong> ಅಥವಾ <strong>"📥 SATS / Excel Import ಮಾಡಿ"</strong> ಬಟನ್ ಬಳಸಿ.</td></tr>`
         : students.map((st, idx) => {
             const comp = computeStudentGrades(st, 'math');
             return `
@@ -2258,9 +2338,8 @@
 
     function renderAnnex2LangHTML(subj) {
       const isEn = subj === 'en';
-      const mapping = LANG_A1_TO_A2; // length 16 (Annexure-2 cols 3..18)
+      const mapping = LANG_A1_TO_A2;
 
-      // Collect per-class stats and accumulate Grand Totals
       const grand = {
         enrTotal: 0,
         A: { M: Array(16).fill(0), F: Array(16).fill(0), T: Array(16).fill(0) },
@@ -2305,8 +2384,7 @@
         `;
       }).join('');
 
-      const makeGrandCells = (gr, gen) =>
-        grand[gr][gen].map(v => `<td>${v}</td>`).join('');
+      const makeGrandCells = (gr, gen) => grand[gr][gen].map(v => `<td>${v}</td>`).join('');
 
       const gTitle = isEn ? 'Grand Total' : 'ಶಾಲಾವಾರು ಒಟ್ಟು';
       const lblM = isEn ? 'Boy' : 'ಗಂಡು';
@@ -2522,7 +2600,7 @@
     }
 
     function renderAnnex2MathsHTML() {
-      const mapping = MATH_A1_TO_A2; // 29 cols (3..31)
+      const mapping = MATH_A1_TO_A2;
       const grand = {
         enrTotal: 0,
         A: { M: Array(29).fill(0), F: Array(29).fill(0), T: Array(29).fill(0) },
@@ -2583,7 +2661,6 @@
         <tr class="grand-total-row"><td>ಒಟ್ಟು</td>${makeGrandCells('B', 'T')}</tr>
       `;
 
-      // 34 cols: 2.0 + 4.8 + 3.2 + 2.2 + 3.3 + 29*2.91 = 15.5 + 84.39 = ~100%
       const colGroupHTML = `
         <colgroup>
           <col style="width:2.0%" />
@@ -2617,7 +2694,7 @@
           <tr>
             <th colspan="4" rowspan="2">ಗಣಿತ FN ಕಲಿಕಾ ಫಲಗಳು →</th>
             <th colspan="5">FN LO-1. ಮೂರು ಅಂಕಿಯ ಸಂಖ್ಯೆಯನ್ನು ಓದುವರು, ಬರೆಯುವರು ಮತ್ತು ಅರ್ಥೈಸಿಕೊಳ್ಳುವರು.</th>
-            <th colspan="11">FN LO-2. ಕನಿಷ್ಠ ಮೂರು ಅಂಕಿಗಳ ಸಂಕಲನ, ವ್ಯವಕಲನ, ಗುಣಾಕಾರ ಮತ್ತು ಭಾಗಾಕಾರ ಲೆಕ್ಕಗಳನ್ನು ಮಾಡುವರು. (ತರಗತಿ 4-5)</th>
+            <th colspan="11">FN LO-2. ಕನಿಷ್ಠ ಮೂರು ಅಂಕೆಗಳ ಸಂಕಲನ, ವ್ಯವಕಲನ, ಗುಣಾಕಾರ ಮತ್ತು ಭಾಗಾಕಾರ ಲೆಕ್ಕಗಳನ್ನು ಮಾಡುವರು. (ತರಗತಿ 4-5)</th>
             <th colspan="6" rowspan="2">FN LO-3. ಗಣಿತದ ಮೂಲ ಕ್ರಿಯೆಗಳನ್ನು ಬಳಸಿ ವಾಕ್ಯ ರೂಪದ ಲೆಕ್ಕಗಳನ್ನು ಬಿಡಿಸುವರು.</th>
             <th colspan="6" rowspan="2">FN LO-4. ನಿತ್ಯ ಜೀವನದಲ್ಲಿ ಗಣಿತದ ಕ್ರಿಯೆಗಳನ್ನು ಅನ್ವಯಿಸುವರು. (ಸಮಯ, ಹಣ, ಅಳತೆ ಮತ್ತು ದತ್ತಾಂಶ).</th>
           </tr>
@@ -2927,4 +3004,5 @@
   </script>
 </body>
 </html>
+
 
