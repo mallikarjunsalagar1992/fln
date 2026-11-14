@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;600;700&display=swap" rel="stylesheet" />
-  <!-- SheetJS for direct .xlsx / .xls / .csv SATS Excel import -->
+  <!-- SheetJS for direct .xlsx / .xls / .csv SATS Excel import & export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root {
@@ -59,7 +59,7 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .save-badge {
@@ -76,9 +76,9 @@
     .btn {
       border: none;
       border-radius: 6px;
-      padding: 7px 12px;
+      padding: 7px 11px;
       font-family: inherit;
-      font-size: 12.5px;
+      font-size: 12px;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
@@ -92,6 +92,7 @@
 
     .btn-primary { background: #2563eb; color: #fff; }
     .btn-success { background: #16a34a; color: #fff; }
+    .btn-excel { background: #15803d; color: #fff; }
     .btn-warning { background: #d97706; color: #fff; }
     .btn-danger { background: #dc2626; color: #fff; }
     .btn-light { background: #fff; color: #1e293b; border: 1px solid #cbd5e1; }
@@ -590,6 +591,8 @@
       <button class="btn btn-teal btn-sm" onclick="exportBackupJSON()">💾 Backup</button>
       <button class="btn btn-light btn-sm" onclick="document.getElementById('restoreFile').click()">📂 Restore</button>
       <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="importBackupJSON(event)" />
+      <button class="btn btn-excel" onclick="exportCurrentToExcel()" title="ಈಗ ತೆರೆದಿರುವ ಶೀಟ್ ಅನ್ನು Excel (.xlsx) ಆಗಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ">📊 Excel (ಈ ಪುಟ)</button>
+      <button class="btn btn-success" onclick="exportAllToExcel()" title="ಎಲ್ಲಾ ತರಗತಿಗಳು + 3 ಶಾಲಾ ಫಾರ್ಮ್‌ಗಳನ್ನು ಒಂದೇ Excel ನಲ್ಲಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ">📚 Full Excel (ಎಲ್ಲಾ ಶೀಟ್)</button>
       <button class="btn btn-warning" onclick="printCurrent()">🖨️ Print (A4)</button>
       <button class="btn btn-primary" onclick="printAllClassesForSubject()">🖨️ Print All Classes (4-10)</button>
     </div>
@@ -780,7 +783,7 @@
     // =========================================================================
     // CONFIGURATION & OFFICIAL FORM DEFINITIONS
     // =========================================================================
-    const STORAGE_KEY = 'fln_2026_27_karnataka_v1';
+    const STORAGE_KEY = 'fln_2026_27_karnataka_v1'; // Preserved so existing data stays safe!
     const CLASSES = [4, 5, 6, 7, 8, 9, 10];
 
     const CLASS_LABELS_KN = {
@@ -853,7 +856,7 @@
 
     let state = loadState();
     let selectedIds = new Set();
-    let pendingImportRows = null; // 2D array from uploaded Excel or parsed text
+    let pendingImportRows = null;
 
     function loadState() {
       try {
@@ -962,6 +965,233 @@
         girls += Number(e.girls) || 0;
       });
       return { boys, girls, total: boys + girls };
+    }
+
+    // =========================================================================
+    // EXPORT TO EXCEL (.xlsx with SheetJS + offline .xls fallback)
+    // =========================================================================
+    function buildCombinedExportTableFromSheetHTML(sheetHtml, totalCols) {
+      const temp = document.createElement('div');
+      temp.innerHTML = sheetHtml;
+
+      // Remove non-print items (checkboxes, delete column, validation strip)
+      temp.querySelectorAll('.no-print').forEach(el => el.remove());
+
+      // Fix empty-row colspan if present
+      const emptyTd = temp.querySelector('.empty-msg-row td');
+      if (emptyTd) emptyTd.setAttribute('colspan', String(totalCols));
+
+      // Convert inputs & selects to plain text
+      temp.querySelectorAll('input').forEach(inp => {
+        const txt = document.createTextNode(inp.value || '');
+        inp.parentNode.replaceChild(txt, inp);
+      });
+      temp.querySelectorAll('select').forEach(sel => {
+        const opt = sel.querySelector('option[selected]') || sel.options[sel.selectedIndex];
+        const valText = opt ? opt.textContent : (sel.value || '');
+        const txt = document.createTextNode(valText);
+        sel.parentNode.replaceChild(txt, sel);
+      });
+
+      // Build unified HTML table so Excel gets headers + table + notes + signatures cleanly
+      const combined = document.createElement('table');
+      const tbody = document.createElement('tbody');
+
+      const addFullRow = (text, bold = false) => {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.setAttribute('colspan', String(totalCols));
+        td.textContent = text;
+        if (bold) td.style.fontWeight = 'bold';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      };
+
+      const govHeader = temp.querySelector('.gov-header');
+      if (govHeader) {
+        govHeader.querySelectorAll('div').forEach(div => {
+          const t = div.textContent.replace(/\s+/g, ' ').trim();
+          if (t) addFullRow(t, true);
+        });
+      }
+
+      const metaBar = temp.querySelector('.form-meta-bar');
+      if (metaBar) {
+        const spans = Array.from(metaBar.querySelectorAll('span')).map(s => s.textContent.replace(/\s+/g, ' ').trim());
+        if (spans.length) addFullRow(spans.join('   |   '), true);
+      }
+
+      combined.appendChild(tbody);
+
+      // Append original table sections
+      const origTable = temp.querySelector('table');
+      if (origTable) {
+        Array.from(origTable.querySelectorAll('thead, tbody, tfoot')).forEach(sec => {
+          const newSec = document.createElement('tbody');
+          Array.from(sec.children).forEach(tr => newSec.appendChild(tr.cloneNode(true)));
+          combined.appendChild(newSec);
+        });
+      }
+
+      // Append notes & signatures
+      const notesBox = temp.querySelector('.notes-box');
+      if (notesBox) {
+        const noteBody = document.createElement('tbody');
+        const h4 = notesBox.querySelector('h4');
+        if (h4) {
+          const tr = document.createElement('tr');
+          const td = document.createElement('td');
+          td.setAttribute('colspan', String(totalCols));
+          td.textContent = h4.textContent.trim();
+          tr.appendChild(td);
+          noteBody.appendChild(tr);
+        }
+        notesBox.querySelectorAll('li, p').forEach((item, idx) => {
+          const tr = document.createElement('tr');
+          const td = document.createElement('td');
+          td.setAttribute('colspan', String(totalCols));
+          const prefix = item.tagName === 'LI' ? `${idx + 1}. ` : '';
+          td.textContent = prefix + item.textContent.replace(/\s+/g, ' ').trim();
+          tr.appendChild(td);
+          noteBody.appendChild(tr);
+        });
+        combined.appendChild(noteBody);
+      }
+
+      const sigFooter = temp.querySelector('.sig-footer');
+      if (sigFooter) {
+        const sigBody = document.createElement('tbody');
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.setAttribute('colspan', String(totalCols));
+        const sigs = Array.from(sigFooter.querySelectorAll('.sig-box')).map(b => b.textContent.replace(/\s+/g, ' ').trim());
+        td.textContent = sigs.join('        |        ');
+        tr.appendChild(td);
+        sigBody.appendChild(tr);
+        combined.appendChild(sigBody);
+      }
+
+      return combined;
+    }
+
+    function createWorksheetFromTable(tableEl, totalCols) {
+      const ws = XLSX.utils.table_to_sheet(tableEl);
+      // Set clean column widths
+      const cols = [];
+      for (let i = 0; i < totalCols; i++) {
+        if (i === 0) cols.push({ wch: 6 });
+        else if (i === 1) cols.push({ wch: 24 });
+        else if (i === 2) cols.push({ wch: 11 });
+        else cols.push({ wch: 10 });
+      }
+      ws['!cols'] = cols;
+      return ws;
+    }
+
+    function fallbackDownloadHtmlAsXls(tablesWithNames, filename) {
+      const html = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office"
+              xmlns:x="urn:schemas-microsoft-com:office:excel"
+              xmlns="http://www.w3.org/TR/REC-html40">
+        <head><meta charset="UTF-8" />
+        <style>
+          table { border-collapse: collapse; margin-bottom: 24px; }
+          th, td { border: 1px solid #000; padding: 4px; text-align: center; font-family: Arial, sans-serif; font-size: 10pt; }
+        </style>
+        </head>
+        <body>
+          ${tablesWithNames.map(item => `<h3>${esc(item.name)}</h3>${item.table.outerHTML}`).join('<br/>')}
+        </body></html>`;
+      const blob = new Blob(['\uFEFF', html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename.replace(/\.xlsx$/i, '.xls');
+      a.click();
+    }
+
+    function getSheetSpecsForCurrent() {
+      if (state.activeTab === 'annex1') {
+        const cols = state.activeSubj === 'math' ? 32 : 21;
+        const html = renderAnnex1HTML(state.activeSubj, state.activeClass);
+        const name = `${subjectTitleShort(state.activeSubj)}_${state.activeClass}th`;
+        return [{ name, html, cols }];
+      }
+      if (state.activeTab === 'annex2') {
+        const cols = state.activeSubj === 'math' ? 34 : 21;
+        const html = renderAnnex2HTML(state.activeSubj);
+        const name = `${subjectTitleShort(state.activeSubj)}_ಶಾಲಾ_Form`;
+        return [{ name, html, cols }];
+      }
+      if (state.activeTab === 'los') {
+        return [{ name: 'FLN_LO_1_to_4', html: renderLearningOutcomesHTML(), cols: 2 }];
+      }
+      if (state.activeTab === 'timeline') {
+        return [{ name: 'B_Grade_Timeline', html: renderTimelineHTML(), cols: 5 }];
+      }
+      return [{ name: 'Resources', html: renderResourcesHTML(), cols: 4 }];
+    }
+
+    function exportCurrentToExcel() {
+      const specs = getSheetSpecsForCurrent();
+      const s = specs[0];
+      const combined = buildCombinedExportTableFromSheetHTML(s.html, s.cols);
+      const safeFile = `FLN_2026_27_${s.name}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+      if (typeof XLSX === 'undefined') {
+        fallbackDownloadHtmlAsXls([{ name: s.name, table: combined }], safeFile);
+        return;
+      }
+
+      const wb = XLSX.utils.book_new();
+      const ws = createWorksheetFromTable(combined, s.cols);
+      XLSX.utils.book_append_sheet(wb, ws, s.name.slice(0, 31));
+      XLSX.writeFile(wb, safeFile);
+    }
+
+    function exportAllToExcel() {
+      const sheetsToExport = [];
+      const subjects = [
+        { code: 'kn', label: 'Kannada', cols1: 21, cols2: 21 },
+        { code: 'en', label: 'English', cols1: 21, cols2: 21 },
+        { code: 'math', label: 'Maths', cols1: 32, cols2: 34 }
+      ];
+
+      subjects.forEach(sub => {
+        // Export all classes that have students (or activeClass if none)
+        const nonEmpty = CLASSES.filter(c => (state.data[sub.code][c] || []).length > 0);
+        nonEmpty.forEach(cls => {
+          sheetsToExport.push({
+            name: `${sub.label}_${cls}th`,
+            html: renderAnnex1HTML(sub.code, cls),
+            cols: sub.cols1
+          });
+        });
+        // Always include the consolidated School Form (Annexure-2) for all 3 subjects
+        sheetsToExport.push({
+          name: `${sub.label}_School_Form`,
+          html: renderAnnex2HTML(sub.code),
+          cols: sub.cols2
+        });
+      });
+
+      const filename = `FLN_2026_27_Full_School_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+      if (typeof XLSX === 'undefined') {
+        const tables = sheetsToExport.map(s => ({
+          name: s.name,
+          table: buildCombinedExportTableFromSheetHTML(s.html, s.cols)
+        }));
+        fallbackDownloadHtmlAsXls(tables, filename);
+        return;
+      }
+
+      const wb = XLSX.utils.book_new();
+      sheetsToExport.forEach(s => {
+        const combined = buildCombinedExportTableFromSheetHTML(s.html, s.cols);
+        const ws = createWorksheetFromTable(combined, s.cols);
+        XLSX.utils.book_append_sheet(wb, ws, s.name.slice(0, 31));
+      });
+      XLSX.writeFile(wb, filename);
     }
 
     // =========================================================================
@@ -1193,7 +1423,6 @@
 
     function isLikelyNumberOrID(tok) {
       const s = String(tok).trim();
-      // Matches serial numbers "1", enrollment IDs "224 855 882" or "224855882", standards "4"
       return /^[\d\s.,-]+$/.test(s);
     }
 
@@ -1209,7 +1438,6 @@
       let genderColIdx = -1;
       let headerRowIdx = -1;
 
-      // Step 1: Detect SATS / Excel header row within first 15 rows
       for (let r = 0; r < Math.min(rows2D.length, 15); r++) {
         const row = rows2D[r].map(c => String(c ?? '').trim());
         const foundName = row.findIndex(c => /^(student\s*name|name\s*of\s*(the\s*)?student|name|ವಿದ್ಯಾರ್ಥಿಯ\s*ಹೆಸರು|ಹೆಸರು)$/i.test(c));
@@ -1237,19 +1465,14 @@
           if (genderColIdx !== -1 && row[genderColIdx]) {
             gender = parseGenderToken(row[genderColIdx], defGender);
           } else {
-            // Search any cell in row for gender token just in case
             const gCell = row.find(c => isGenderToken(c));
             if (gCell) gender = parseGenderToken(gCell, defGender);
           }
-          // Skip repeated header rows if any
           if (/^(student\s*name|name|ವಿದ್ಯಾರ್ಥಿಯ\s*ಹೆಸರು|ಹೆಸರು)$/i.test(name)) continue;
         } else {
-          // Smart auto-detection when pasted WITHOUT header row (e.g. direct rows from SATS Excel or "Name, Gender")
           const gCell = row.find(c => isGenderToken(c));
           if (gCell) gender = parseGenderToken(gCell, defGender);
 
-          // Find best candidate for Student Name:
-          // Not empty, not pure number/ID, not date, not gender token, not standard like "4th"/"5th"
           const nameCandidates = row.filter(c => {
             if (!c) return false;
             if (isGenderToken(c)) return false;
@@ -1261,12 +1484,10 @@
           });
 
           if (nameCandidates.length > 0) {
-            // Pick the longest alphabetic/Kannada text cell (usually full name like "ANANYA GOPAL LATTI")
             name = nameCandidates.sort((a, b) => b.length - a.length)[0];
           }
         }
 
-        // Clean extra spaces inside name
         name = name.replace(/\s+/g, ' ').trim();
         if (name && !isLikelyNumberOrID(name) && !isGenderToken(name)) {
           students.push({ id: uid(), name, gender, grades: {} });
@@ -1282,7 +1503,6 @@
         if (line.includes('\t')) {
           return line.split('\t').map(c => c.replace(/^["']|["']$/g, '').trim());
         }
-        // Smart CSV split respecting quotes
         const cells = [];
         let cur = '';
         let inQuotes = false;
@@ -1316,7 +1536,6 @@
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
             const rows2D = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: false, defval: '' });
             pendingImportRows = rows2D;
-            // Also show readable preview in textarea
             document.getElementById('importTextarea').value = rows2D
               .filter(r => r.some(c => String(c).trim() !== ''))
               .map(r => r.join('\t'))
@@ -1329,12 +1548,10 @@
         };
         reader.readAsArrayBuffer(file);
       } else {
-        // Fallback for CSV / TXT / HTML-based .xls when offline
         const reader = new FileReader();
         reader.onload = e => {
           const content = e.target.result;
           if (/<table/i.test(content)) {
-            // SATS sometimes exports HTML table saved as .xls
             const doc = new DOMParser().parseFromString(content, 'text/html');
             const rows2D = Array.from(doc.querySelectorAll('tr')).map(tr =>
               Array.from(tr.querySelectorAll('th, td')).map(td => td.textContent.trim())
@@ -1976,7 +2193,7 @@
       `;
 
       const rowsHTML = students.length === 0
-        ? `<tr><td colspan="23" style="padding:18px; color:#64748b; font-size:12px;">ಈ ತರಗತಿಯಲ್ಲಿ ಇನ್ನೂ ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು ಸೇರಿಸಿಲ್ಲ. ಮೇಲಿನ <strong>"+ ವಿದ್ಯಾರ್ಥಿ ಸೇರಿಸಿ"</strong> ಅಥವಾ <strong>"📥 SATS / Excel Import ಮಾಡಿ"</strong> ಬಟನ್ ಬಳಸಿ.</td></tr>`
+        ? `<tr class="empty-msg-row"><td colspan="23" style="padding:18px; color:#64748b; font-size:12px;">ಈ ತರಗತಿಯಲ್ಲಿ ಇನ್ನೂ ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು ಸೇರಿಸಿಲ್ಲ. ಮೇಲಿನ <strong>"+ ವಿದ್ಯಾರ್ಥಿ ಸೇರಿಸಿ"</strong> ಅಥವಾ <strong>"📥 SATS / Excel Import ಮಾಡಿ"</strong> ಬಟನ್ ಬಳಸಿ.</td></tr>`
         : students.map((st, idx) => {
             const comp = computeStudentGrades(st, subj);
             const gLabelM = isEn ? 'Boy' : 'ಗಂಡು';
@@ -2237,7 +2454,7 @@
       `;
 
       const rowsHTML = students.length === 0
-        ? `<tr><td colspan="34" style="padding:18px; color:#64748b; font-size:12px;">ಈ ತರಗತಿಯಲ್ಲಿ ಇನ್ನೂ ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು ಸೇರಿಸಿಲ್ಲ. ಮೇಲಿನ <strong>"+ ವಿದ್ಯಾರ್ಥಿ ಸೇರಿಸಿ"</strong> ಅಥವಾ <strong>"📥 SATS / Excel Import ಮಾಡಿ"</strong> ಬಟನ್ ಬಳಸಿ.</td></tr>`
+        ? `<tr class="empty-msg-row"><td colspan="34" style="padding:18px; color:#64748b; font-size:12px;">ಈ ತರಗತಿಯಲ್ಲಿ ಇನ್ನೂ ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು ಸೇರಿಸಿಲ್ಲ. ಮೇಲಿನ <strong>"+ ವಿದ್ಯಾರ್ಥಿ ಸೇರಿಸಿ"</strong> ಅಥವಾ <strong>"📥 SATS / Excel Import ಮಾಡಿ"</strong> ಬಟನ್ ಬಳಸಿ.</td></tr>`
         : students.map((st, idx) => {
             const comp = computeStudentGrades(st, 'math');
             return `
@@ -3004,5 +3221,3 @@
   </script>
 </body>
 </html>
-
-
