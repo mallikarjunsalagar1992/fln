@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;600;700&display=swap" rel="stylesheet" />
-  <!-- SheetJS for direct .xlsx / .xls / .csv SATS Excel import & export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- xlsx-js-style: Supports SATS Excel import AND colorful/bordered .xlsx export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <style>
     :root {
       --primary: #1a4f8b;
@@ -591,8 +591,8 @@
       <button class="btn btn-teal btn-sm" onclick="exportBackupJSON()">💾 Backup</button>
       <button class="btn btn-light btn-sm" onclick="document.getElementById('restoreFile').click()">📂 Restore</button>
       <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="importBackupJSON(event)" />
-      <button class="btn btn-excel" onclick="exportCurrentToExcel()" title="ಈಗ ತೆರೆದಿರುವ ಶೀಟ್ ಅನ್ನು Excel (.xlsx) ಆಗಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ">📊 Excel (ಈ ಪುಟ)</button>
-      <button class="btn btn-success" onclick="exportAllToExcel()" title="ಎಲ್ಲಾ ತರಗತಿಗಳು + 3 ಶಾಲಾ ಫಾರ್ಮ್‌ಗಳನ್ನು ಒಂದೇ Excel ನಲ್ಲಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ">📚 Full Excel (ಎಲ್ಲಾ ಶೀಟ್)</button>
+      <button class="btn btn-excel" onclick="exportCurrentToExcel()" title="ಈಗ ತೆರೆದಿರುವ ಶೀಟ್ ಅನ್ನು Colorful Excel (.xlsx) ಆಗಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ">📊 Excel (ಈ ಪುಟ)</button>
+      <button class="btn btn-success" onclick="exportAllToExcel()" title="ಎಲ್ಲಾ ತರಗತಿಗಳು + 3 ಶಾಲಾ ಫಾರ್ಮ್‌ಗಳನ್ನು ಒಂದೇ Colorful Excel ನಲ್ಲಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ">📚 Full Excel (ಎಲ್ಲಾ ಶೀಟ್)</button>
       <button class="btn btn-warning" onclick="printCurrent()">🖨️ Print (A4)</button>
       <button class="btn btn-primary" onclick="printAllClassesForSubject()">🖨️ Print All Classes (4-10)</button>
     </div>
@@ -783,7 +783,7 @@
     // =========================================================================
     // CONFIGURATION & OFFICIAL FORM DEFINITIONS
     // =========================================================================
-    const STORAGE_KEY = 'fln_2026_27_karnataka_v1'; // Preserved so existing data stays safe!
+    const STORAGE_KEY = 'fln_2026_27_karnataka_v1'; // Existing saved data stays 100% safe!
     const CLASSES = [4, 5, 6, 7, 8, 9, 10];
 
     const CLASS_LABELS_KN = {
@@ -968,20 +968,24 @@
     }
 
     // =========================================================================
-    // EXPORT TO EXCEL (.xlsx with SheetJS + offline .xls fallback)
+    // FULL COLORFUL & BORDERED EXCEL EXPORT ENGINE (.xlsx via xlsx-js-style)
     // =========================================================================
+    const THIN_BORDER = {
+      top:    { style: 'thin', color: { rgb: '000000' } },
+      bottom: { style: 'thin', color: { rgb: '000000' } },
+      left:   { style: 'thin', color: { rgb: '000000' } },
+      right:  { style: 'thin', color: { rgb: '000000' } }
+    };
+
     function buildCombinedExportTableFromSheetHTML(sheetHtml, totalCols) {
       const temp = document.createElement('div');
       temp.innerHTML = sheetHtml;
 
-      // Remove non-print items (checkboxes, delete column, validation strip)
       temp.querySelectorAll('.no-print').forEach(el => el.remove());
 
-      // Fix empty-row colspan if present
       const emptyTd = temp.querySelector('.empty-msg-row td');
       if (emptyTd) emptyTd.setAttribute('colspan', String(totalCols));
 
-      // Convert inputs & selects to plain text
       temp.querySelectorAll('input').forEach(inp => {
         const txt = document.createTextNode(inp.value || '');
         inp.parentNode.replaceChild(txt, inp);
@@ -993,37 +997,44 @@
         sel.parentNode.replaceChild(txt, sel);
       });
 
-      // Build unified HTML table so Excel gets headers + table + notes + signatures cleanly
       const combined = document.createElement('table');
-      const tbody = document.createElement('tbody');
+      const topBody = document.createElement('tbody');
 
-      const addFullRow = (text, bold = false) => {
+      const addFullRow = (text, rowClass) => {
         const tr = document.createElement('tr');
+        if (rowClass) tr.className = rowClass;
         const td = document.createElement('td');
         td.setAttribute('colspan', String(totalCols));
         td.textContent = text;
-        if (bold) td.style.fontWeight = 'bold';
         tr.appendChild(td);
-        tbody.appendChild(tr);
+        topBody.appendChild(tr);
       };
 
       const govHeader = temp.querySelector('.gov-header');
       if (govHeader) {
         govHeader.querySelectorAll('div').forEach(div => {
           const t = div.textContent.replace(/\s+/g, ' ').trim();
-          if (t) addFullRow(t, true);
+          if (!t) return;
+          if (div.classList.contains('h-subtitle')) {
+            addFullRow(t, 'excel-subtitle');
+          } else if (div.classList.contains('h-subj')) {
+            addFullRow(t, 'excel-subj');
+          } else if (div.classList.contains('h-annex')) {
+            addFullRow(t, 'excel-annex');
+          } else {
+            addFullRow(t, 'excel-gov');
+          }
         });
       }
 
       const metaBar = temp.querySelector('.form-meta-bar');
       if (metaBar) {
         const spans = Array.from(metaBar.querySelectorAll('span')).map(s => s.textContent.replace(/\s+/g, ' ').trim());
-        if (spans.length) addFullRow(spans.join('   |   '), true);
+        if (spans.length) addFullRow(spans.join('     |     '), 'excel-meta');
       }
 
-      combined.appendChild(tbody);
+      combined.appendChild(topBody);
 
-      // Append original table sections
       const origTable = temp.querySelector('table');
       if (origTable) {
         Array.from(origTable.querySelectorAll('thead, tbody, tfoot')).forEach(sec => {
@@ -1033,13 +1044,13 @@
         });
       }
 
-      // Append notes & signatures
       const notesBox = temp.querySelector('.notes-box');
       if (notesBox) {
         const noteBody = document.createElement('tbody');
         const h4 = notesBox.querySelector('h4');
         if (h4) {
           const tr = document.createElement('tr');
+          tr.className = 'excel-note-title';
           const td = document.createElement('td');
           td.setAttribute('colspan', String(totalCols));
           td.textContent = h4.textContent.trim();
@@ -1048,6 +1059,10 @@
         }
         notesBox.querySelectorAll('li, p').forEach((item, idx) => {
           const tr = document.createElement('tr');
+          let cls = 'excel-note';
+          if (item.classList.contains('bg-yellow')) cls = 'excel-note-yellow';
+          else if (item.classList.contains('bg-blue')) cls = 'excel-note-blue';
+          tr.className = cls;
           const td = document.createElement('td');
           td.setAttribute('colspan', String(totalCols));
           const prefix = item.tagName === 'LI' ? `${idx + 1}. ` : '';
@@ -1062,10 +1077,11 @@
       if (sigFooter) {
         const sigBody = document.createElement('tbody');
         const tr = document.createElement('tr');
+        tr.className = 'excel-sig';
         const td = document.createElement('td');
         td.setAttribute('colspan', String(totalCols));
         const sigs = Array.from(sigFooter.querySelectorAll('.sig-box')).map(b => b.textContent.replace(/\s+/g, ' ').trim());
-        td.textContent = sigs.join('        |        ');
+        td.textContent = sigs.join('          |          ');
         tr.appendChild(td);
         sigBody.appendChild(tr);
         combined.appendChild(sigBody);
@@ -1074,17 +1090,233 @@
       return combined;
     }
 
-    function createWorksheetFromTable(tableEl, totalCols) {
-      const ws = XLSX.utils.table_to_sheet(tableEl);
-      // Set clean column widths
-      const cols = [];
-      for (let i = 0; i < totalCols; i++) {
-        if (i === 0) cols.push({ wch: 6 });
-        else if (i === 1) cols.push({ wch: 24 });
-        else if (i === 2) cols.push({ wch: 11 });
-        else cols.push({ wch: 10 });
+    function deriveCellStyle(tr, td) {
+      const trCls = tr.classList;
+      const tdCls = td.classList;
+
+      const baseFont = { name: 'Calibri', sz: 10, color: { rgb: '000000' } };
+      const baseAlign = { horizontal: 'center', vertical: 'center', wrapText: true };
+
+      // Top Gov Header lines (no grid clutter, clean centered bold)
+      if (trCls.contains('excel-gov')) {
+        return {
+          font: { ...baseFont, sz: 11, bold: true },
+          alignment: baseAlign
+        };
       }
-      ws['!cols'] = cols;
+      if (trCls.contains('excel-subj')) {
+        return {
+          fill: { fgColor: { rgb: 'D9E1F2' } },
+          font: { ...baseFont, sz: 10.5, bold: true },
+          border: THIN_BORDER,
+          alignment: baseAlign
+        };
+      }
+      if (trCls.contains('excel-annex')) {
+        return {
+          font: { ...baseFont, sz: 11, bold: true },
+          alignment: baseAlign
+        };
+      }
+      if (trCls.contains('excel-subtitle')) {
+        return {
+          fill: { fgColor: { rgb: 'FFF200' } },
+          font: { ...baseFont, sz: 10.5, bold: true },
+          border: THIN_BORDER,
+          alignment: baseAlign
+        };
+      }
+      if (trCls.contains('excel-meta')) {
+        return {
+          fill: { fgColor: { rgb: 'E2EFDA' } },
+          font: { ...baseFont, sz: 10, bold: true },
+          border: THIN_BORDER,
+          alignment: baseAlign
+        };
+      }
+      if (trCls.contains('excel-note-title')) {
+        return {
+          fill: { fgColor: { rgb: 'FFF2CC' } },
+          font: { ...baseFont, sz: 9.5, bold: true },
+          border: THIN_BORDER,
+          alignment: { ...baseAlign, horizontal: 'left' }
+        };
+      }
+      if (trCls.contains('excel-note-yellow')) {
+        return {
+          fill: { fgColor: { rgb: 'FFF200' } },
+          font: { ...baseFont, sz: 9.5, bold: true },
+          border: THIN_BORDER,
+          alignment: { ...baseAlign, horizontal: 'left' }
+        };
+      }
+      if (trCls.contains('excel-note-blue')) {
+        return {
+          fill: { fgColor: { rgb: 'DEEBF7' } },
+          font: { ...baseFont, sz: 9.5 },
+          border: THIN_BORDER,
+          alignment: { ...baseAlign, horizontal: 'left' }
+        };
+      }
+      if (trCls.contains('excel-note')) {
+        return {
+          fill: { fgColor: { rgb: 'F9FAFB' } },
+          font: { ...baseFont, sz: 9 },
+          border: THIN_BORDER,
+          alignment: { ...baseAlign, horizontal: 'left' }
+        };
+      }
+      if (trCls.contains('excel-sig')) {
+        return {
+          font: { ...baseFont, sz: 10, bold: true },
+          alignment: { horizontal: 'center', vertical: 'bottom', wrapText: true }
+        };
+      }
+
+      // Data & Header Cells inside Assessment Table
+      let fill = null;
+      let font = { ...baseFont };
+      const alignment = { ...baseAlign };
+
+      if (tdCls.contains('text-left')) {
+        alignment.horizontal = 'left';
+      }
+
+      const isTh = td.tagName === 'TH';
+      if (isTh) {
+        font.bold = true;
+        font.sz = 9;
+      }
+
+      if (tdCls.contains('grade-A')) {
+        fill = { fgColor: { rgb: 'DCFCE7' } };
+        font.color = { rgb: '166534' };
+        font.bold = true;
+      } else if (tdCls.contains('grade-B')) {
+        fill = { fgColor: { rgb: 'FEE2E2' } };
+        font.color = { rgb: '991B1B' };
+        font.bold = true;
+      } else if (tdCls.contains('bg-yellow')) {
+        fill = { fgColor: { rgb: 'FFF200' } };
+        font.bold = true;
+      } else if (tdCls.contains('bg-cream')) {
+        fill = { fgColor: { rgb: 'FFF2CC' } };
+        font.bold = true;
+      } else if (tdCls.contains('bg-blue') || trCls.contains('grand-total-row')) {
+        fill = { fgColor: { rgb: 'D9E1F2' } };
+        font.bold = true;
+      } else if (trCls.contains('total-row')) {
+        fill = { fgColor: { rgb: 'EDEDED' } };
+        font.bold = true;
+      } else if (isTh) {
+        fill = { fgColor: { rgb: 'DDEBF7' } };
+      } else if (td.querySelector('strong')) {
+        font.bold = true;
+      }
+
+      const styleObj = { font, border: THIN_BORDER, alignment };
+      if (fill) styleObj.fill = fill;
+      return styleObj;
+    }
+
+    function createStyledWorksheetFromTable(combinedTable, totalCols) {
+      // 1. Build exact (r, c) style & text map accounting for rowspan & colspan
+      const occupied = {};
+      const cellMeta = {};
+      const rows = Array.from(combinedTable.querySelectorAll('tr'));
+      const totalRows = rows.length;
+
+      rows.forEach((tr, r) => {
+        let c = 0;
+        Array.from(tr.children).forEach(td => {
+          while (occupied[`${r},${c}`]) c++;
+          const rs = parseInt(td.getAttribute('rowspan') || '1', 10);
+          const cs = parseInt(td.getAttribute('colspan') || '1', 10);
+          const styleObj = deriveCellStyle(tr, td);
+          const cleanText = td.textContent.replace(/\s+/g, ' ').trim();
+
+          for (let rr = r; rr < r + rs; rr++) {
+            for (let cc = c; cc < c + cs; cc++) {
+              occupied[`${rr},${cc}`] = true;
+              cellMeta[`${rr},${cc}`] = {
+                style: styleObj,
+                text: (rr === r && cc === c) ? cleanText : '',
+                rs,
+                cs,
+                isAnchor: (rr === r && cc === c)
+              };
+            }
+          }
+          c += cs;
+        });
+      });
+
+      // 2. Convert table via SheetJS (captures numeric/text values & !merges)
+      const ws = XLSX.utils.table_to_sheet(combinedTable);
+
+      // 3. Column widths
+      const colWidths = [];
+      for (let i = 0; i < totalCols; i++) {
+        if (totalCols <= 6) {
+          colWidths.push(i === 0 ? 8 : 38);
+        } else if (i === 0) {
+          colWidths.push(6);
+        } else if (i === 1) {
+          colWidths.push(totalCols > 25 ? 20 : 24);
+        } else if (i === 2) {
+          colWidths.push(11);
+        } else if (totalCols >= 30 && i <= 4) {
+          colWidths.push(9);
+        } else {
+          colWidths.push(totalCols >= 30 ? 9.5 : 12);
+        }
+      }
+      ws['!cols'] = colWidths.map(wch => ({ wch }));
+
+      // 4. Apply styles to EVERY cell (including interior cells of merged ranges so borders never break!)
+      for (let r = 0; r < totalRows; r++) {
+        for (let c = 0; c < totalCols; c++) {
+          const meta = cellMeta[`${r},${c}`];
+          if (!meta) continue;
+          const addr = XLSX.utils.encode_cell({ r, c });
+          if (!ws[addr]) {
+            ws[addr] = { t: 's', v: '' };
+          }
+          ws[addr].s = meta.style;
+        }
+      }
+
+      // 5. Compute smart Row Heights so wrapped Kannada/English headers never clip
+      const rowHeights = [];
+      for (let r = 0; r < totalRows; r++) {
+        let maxLines = 1;
+        const tr = rows[r];
+        const isSig = tr.classList.contains('excel-sig');
+        if (isSig) {
+          rowHeights.push({ hpt: 36 });
+          continue;
+        }
+        for (let c = 0; c < totalCols; c++) {
+          const meta = cellMeta[`${r},${c}`];
+          if (!meta || !meta.isAnchor || !meta.text) continue;
+          let effW = 0;
+          for (let cc = c; cc < Math.min(totalCols, c + meta.cs); cc++) {
+            effW += colWidths[cc] || 10;
+          }
+          // Kannada glyphs are slightly wider than Latin chars
+          const charsPerLine = Math.max(6, Math.floor(effW * 0.72));
+          const wrappedLines = Math.ceil(meta.text.length / charsPerLine);
+          const perRowLines = Math.ceil(wrappedLines / meta.rs);
+          if (perRowLines > maxLines) maxLines = perRowLines;
+        }
+        const hpt = Math.max(20, Math.min(115, maxLines * 14 + 6));
+        rowHeights.push({ hpt });
+      }
+      ws['!rows'] = rowHeights;
+
+      // Landscape Page Setup hint
+      ws['!pageSetup'] = { orientation: 'landscape', paperSize: 9, fitToWidth: 1, fitToHeight: 0 };
+
       return ws;
     }
 
@@ -1096,7 +1328,16 @@
         <head><meta charset="UTF-8" />
         <style>
           table { border-collapse: collapse; margin-bottom: 24px; }
-          th, td { border: 1px solid #000; padding: 4px; text-align: center; font-family: Arial, sans-serif; font-size: 10pt; }
+          th, td { border: 1px solid #000; padding: 4px; text-align: center; font-family: Arial, sans-serif; font-size: 9.5pt; }
+          th { background: #ddebf7; font-weight: bold; }
+          .bg-yellow, .excel-subtitle td, .excel-note-yellow td { background: #fff200; font-weight: bold; }
+          .bg-cream, .excel-note-title td { background: #fff2cc; font-weight: bold; }
+          .bg-blue, .grand-total-row td, .excel-note-blue td, .excel-subj td { background: #d9e1f2; font-weight: bold; }
+          .excel-meta td { background: #e2efda; font-weight: bold; }
+          .total-row td { background: #ededed; font-weight: bold; }
+          .grade-A { background: #dcfce7; color: #166534; font-weight: bold; }
+          .grade-B { background: #fee2e2; color: #991b1b; font-weight: bold; }
+          .text-left { text-align: left; }
         </style>
         </head>
         <body>
@@ -1143,7 +1384,7 @@
       }
 
       const wb = XLSX.utils.book_new();
-      const ws = createWorksheetFromTable(combined, s.cols);
+      const ws = createStyledWorksheetFromTable(combined, s.cols);
       XLSX.utils.book_append_sheet(wb, ws, s.name.slice(0, 31));
       XLSX.writeFile(wb, safeFile);
     }
@@ -1157,7 +1398,6 @@
       ];
 
       subjects.forEach(sub => {
-        // Export all classes that have students (or activeClass if none)
         const nonEmpty = CLASSES.filter(c => (state.data[sub.code][c] || []).length > 0);
         nonEmpty.forEach(cls => {
           sheetsToExport.push({
@@ -1166,7 +1406,6 @@
             cols: sub.cols1
           });
         });
-        // Always include the consolidated School Form (Annexure-2) for all 3 subjects
         sheetsToExport.push({
           name: `${sub.label}_School_Form`,
           html: renderAnnex2HTML(sub.code),
@@ -1188,7 +1427,7 @@
       const wb = XLSX.utils.book_new();
       sheetsToExport.forEach(s => {
         const combined = buildCombinedExportTableFromSheetHTML(s.html, s.cols);
-        const ws = createWorksheetFromTable(combined, s.cols);
+        const ws = createStyledWorksheetFromTable(combined, s.cols);
         XLSX.utils.book_append_sheet(wb, ws, s.name.slice(0, 31));
       });
       XLSX.writeFile(wb, filename);
@@ -2109,7 +2348,7 @@
           </tr>
           <tr>
             <th>1</th><th>2</th><th>*</th>
-            ${Array.from({length: 18}, (_, i) => `<th class="${[8,12,16,19].includes(i+3)?'bg-cream':''}">${i + 3}</th>`).join('')}
+            ${Array.from({length: 18}, (_, i) => `<th class="${[8,12,16,19].includes(i+3)?'bg-cream':(i+3===20?'bg-yellow':'')}">${i + 3}</th>`).join('')}
           </tr>
         </thead>
       ` : `
@@ -2148,18 +2387,18 @@
           <tr>
             <th></th>
             <th colspan="2" class="bg-yellow">ಮೌಲ್ಯಾಂಕನ ವಿಧಾನಗಳು →</th>
-            <th colspan="4">ಲಿಖಿತ</th>
-            <th>ಮೌಖಿಕ</th>
-            <th class="bg-cream">ಲಿ &amp; ಮೌ</th>
-            <th colspan="2">ಲಿಖಿತ</th>
-            <th>ಮೌಖಿಕ</th>
-            <th class="bg-cream">ಲಿ &amp; ಮೌ</th>
-            <th colspan="2">ಲಿಖಿತ</th>
-            <th>ಮೌಖಿಕ</th>
-            <th class="bg-cream">ಲಿ &amp; ಮೌ</th>
-            <th>ಲಿಖಿತ</th>
-            <th>ಮೌಖಿಕ</th>
-            <th class="bg-cream">ಲಿ &amp; ಮೌ</th>
+            <th colspan="4" class="bg-cream">ಲಿಖಿತ</th>
+            <th class="bg-cream">ಮೌಖಿಕ</th>
+            <th class="bg-yellow">ಲಿ &amp; ಮೌ</th>
+            <th colspan="2" class="bg-cream">ಲಿಖಿತ</th>
+            <th class="bg-cream">ಮೌಖಿಕ</th>
+            <th class="bg-yellow">ಲಿ &amp; ಮೌ</th>
+            <th colspan="2" class="bg-cream">ಲಿಖಿತ</th>
+            <th class="bg-cream">ಮೌಖಿಕ</th>
+            <th class="bg-yellow">ಲಿ &amp; ಮೌ</th>
+            <th class="bg-cream">ಲಿಖಿತ</th>
+            <th class="bg-cream">ಮೌಖಿಕ</th>
+            <th class="bg-yellow">ಲಿ &amp; ಮೌ</th>
             <th class="bg-yellow">ಲಿ&amp;ಮೌ</th>
           </tr>
           <tr>
@@ -2254,14 +2493,14 @@
             <td class="no-print" rowspan="6"></td>
           </tr>
           <tr class="total-row"><td>${lblF}</td>${makeTotCells('A', 'F')}</tr>
-          <tr class="total-row"><td>${lblT}</td>${makeTotCells('A', 'T')}</tr>
+          <tr class="grand-total-row"><td>${lblT}</td>${makeTotCells('A', 'T')}</tr>
           <tr class="total-row">
             <td colspan="2" rowspan="3">${totBLabel}</td>
             <td>${lblM}</td>
             ${makeTotCells('B', 'M')}
           </tr>
           <tr class="total-row"><td>${lblF}</td>${makeTotCells('B', 'F')}</tr>
-          <tr class="total-row"><td>${lblT}</td>${makeTotCells('B', 'T')}</tr>
+          <tr class="grand-total-row"><td>${lblT}</td>${makeTotCells('B', 'T')}</tr>
         </tfoot>
       `;
 
@@ -2391,21 +2630,21 @@
           <tr>
             <th></th>
             <th colspan="2" class="bg-yellow">ಮೌಲ್ಯಾಂಕನ ವಿಧಾನಗಳು →</th>
-            <th colspan="3">ಲಿಖಿತ</th>
-            <th>ಮೌಖಿಕ</th>
-            <th class="bg-cream">ಲಿ&amp;ಮೌ</th>
-            <th colspan="2">ಲಿಖಿತ</th>
-            <th colspan="2">ಲಿಖಿತ</th>
-            <th colspan="3">ಲಿಖಿತ</th>
-            <th colspan="2">ಲಿಖಿತ</th>
-            <th>ಮೌ</th>
-            <th class="bg-cream">ಲಿ&amp;ಮೌ</th>
-            <th colspan="4">ಲಿಖಿತ</th>
-            <th>ಮೌಖಿಕ</th>
-            <th class="bg-cream">ಲಿ&amp;ಮೌ</th>
-            <th colspan="4">ಲಿಖಿತ</th>
-            <th>ಮೌ</th>
-            <th class="bg-cream">ಲಿ&amp;ಮೌ</th>
+            <th colspan="3" class="bg-cream">ಲಿಖಿತ</th>
+            <th class="bg-cream">ಮೌಖಿಕ</th>
+            <th class="bg-yellow">ಲಿ&amp;ಮೌ</th>
+            <th colspan="2" class="bg-cream">ಲಿಖಿತ</th>
+            <th colspan="2" class="bg-cream">ಲಿಖಿತ</th>
+            <th colspan="3" class="bg-cream">ಲಿಖಿತ</th>
+            <th colspan="2" class="bg-cream">ಲಿಖಿತ</th>
+            <th class="bg-cream">ಮೌ</th>
+            <th class="bg-yellow">ಲಿ&amp;ಮೌ</th>
+            <th colspan="4" class="bg-cream">ಲಿಖಿತ</th>
+            <th class="bg-cream">ಮೌಖಿಕ</th>
+            <th class="bg-yellow">ಲಿ&amp;ಮೌ</th>
+            <th colspan="4" class="bg-cream">ಲಿಖಿತ</th>
+            <th class="bg-cream">ಮೌ</th>
+            <th class="bg-yellow">ಲಿ&amp;ಮೌ</th>
             <th class="bg-yellow">ಲಿ&amp;ಮೌ</th>
           </tr>
           <tr>
@@ -2498,14 +2737,14 @@
             <td class="no-print" rowspan="6"></td>
           </tr>
           <tr class="total-row"><td>ಹೆಣ್ಣು</td>${makeTotCells('A', 'F')}</tr>
-          <tr class="total-row"><td>ಒಟ್ಟು</td>${makeTotCells('A', 'T')}</tr>
+          <tr class="grand-total-row"><td>ಒಟ್ಟು</td>${makeTotCells('A', 'T')}</tr>
           <tr class="total-row">
             <td colspan="2" rowspan="3">ತರಗತಿವಾರು ಒಟ್ಟು B ಗಳು</td>
             <td>ಗಂಡು</td>
             ${makeTotCells('B', 'M')}
           </tr>
           <tr class="total-row"><td>ಹೆಣ್ಣು</td>${makeTotCells('B', 'F')}</tr>
-          <tr class="total-row"><td>ಒಟ್ಟು</td>${makeTotCells('B', 'T')}</tr>
+          <tr class="grand-total-row"><td>ಒಟ್ಟು</td>${makeTotCells('B', 'T')}</tr>
         </tfoot>
       `;
 
@@ -2585,14 +2824,14 @@
             <td rowspan="6">${cIdx + 1}</td>
             <td rowspan="6"><strong>${clsLabel}</strong></td>
             <td rowspan="6"><strong>${clsEnrTotal}</strong></td>
-            <td rowspan="3"><strong>A</strong></td>
+            <td rowspan="3" class="bg-cream"><strong>A</strong></td>
             <td>${lblM}</td>
             ${makeCells('A', 'M')}
           </tr>
           <tr><td>${lblF}</td>${makeCells('A', 'F')}</tr>
           <tr class="total-row"><td>${lblT}</td>${makeCells('A', 'T')}</tr>
           <tr>
-            <td rowspan="3"><strong>B</strong></td>
+            <td rowspan="3" class="bg-cream"><strong>B</strong></td>
             <td>${lblM}</td>
             ${makeCells('B', 'M')}
           </tr>
@@ -2752,16 +2991,16 @@
           <tr>
             <th></th>
             <th colspan="4" class="bg-yellow">ಮೌಲ್ಯಾಂಕನ ವಿಧಾನಗಳು →</th>
-            <th colspan="4">ಲಿಖಿತ</th>
-            <th>ಮೌಖಿಕ</th>
-            <th class="bg-cream">ಲಿ &amp; ಮೌ</th>
-            <th colspan="2">ಲಿಖಿತ</th>
+            <th colspan="4" class="bg-cream">ಲಿಖಿತ</th>
+            <th class="bg-cream">ಮೌಖಿಕ</th>
+            <th class="bg-yellow">ಲಿ &amp; ಮೌ</th>
+            <th colspan="2" class="bg-cream">ಲಿಖಿತ</th>
+            <th class="bg-yellow">ಲಿಖಿತ</th>
+            <th colspan="2" class="bg-cream">ಲಿಖಿತ</th>
+            <th class="bg-yellow">ಲಿಖಿತ</th>
             <th class="bg-cream">ಲಿಖಿತ</th>
-            <th colspan="2">ಲಿಖಿತ</th>
-            <th class="bg-cream">ಲಿಖಿತ</th>
-            <th>ಲಿಖಿತ</th>
-            <th>ಮೌಖಿಕ</th>
-            <th class="bg-cream">ಲಿ &amp; ಮೌ</th>
+            <th class="bg-cream">ಮೌಖಿಕ</th>
+            <th class="bg-yellow">ಲಿ &amp; ಮೌ</th>
             <th class="bg-yellow">A/B</th>
           </tr>
           <tr>
@@ -2841,14 +3080,14 @@
             <td rowspan="6">${cIdx + 1}</td>
             <td rowspan="6"><strong>${CLASS_LABELS_KN[cls]}</strong></td>
             <td rowspan="6"><strong>${clsEnrTotal}</strong></td>
-            <td rowspan="3"><strong>A</strong></td>
+            <td rowspan="3" class="bg-cream"><strong>A</strong></td>
             <td>ಗಂಡು</td>
             ${makeCells('A', 'M')}
           </tr>
           <tr><td>ಹೆಣ್ಣು</td>${makeCells('A', 'F')}</tr>
           <tr class="total-row"><td>ಒಟ್ಟು</td>${makeCells('A', 'T')}</tr>
           <tr>
-            <td rowspan="3"><strong>B</strong></td>
+            <td rowspan="3" class="bg-cream"><strong>B</strong></td>
             <td>ಗಂಡು</td>
             ${makeCells('B', 'M')}
           </tr>
@@ -2949,21 +3188,21 @@
           <tr>
             <th></th>
             <th colspan="4" class="bg-yellow">ಮೌಲ್ಯಾಂಕನ ವಿಧಾನಗಳು →</th>
-            <th colspan="3">ಲಿಖಿತ</th>
-            <th>ಮೌಖಿಕ</th>
-            <th class="bg-cream">ಲಿ&amp;ಮೌ</th>
-            <th colspan="2">ಲಿಖಿತ</th>
-            <th colspan="2">ಲಿಖಿತ</th>
-            <th colspan="3">ಲಿಖಿತ</th>
-            <th colspan="2">ಲಿಖಿತ</th>
-            <th>ಮೌ</th>
-            <th class="bg-cream">ಲಿ&amp;ಮೌ</th>
-            <th colspan="4">ಲಿಖಿತ</th>
-            <th>ಮೌಖಿಕ</th>
-            <th class="bg-cream">ಲಿ&amp;ಮೌ</th>
-            <th colspan="4">ಲಿಖಿತ</th>
-            <th>ಮೌಖಿಕ</th>
-            <th class="bg-cream">ಲಿ&amp;ಮೌ</th>
+            <th colspan="3" class="bg-cream">ಲಿಖಿತ</th>
+            <th class="bg-cream">ಮೌಖಿಕ</th>
+            <th class="bg-yellow">ಲಿ&amp;ಮೌ</th>
+            <th colspan="2" class="bg-cream">ಲಿಖಿತ</th>
+            <th colspan="2" class="bg-cream">ಲಿಖಿತ</th>
+            <th colspan="3" class="bg-cream">ಲಿಖಿತ</th>
+            <th colspan="2" class="bg-cream">ಲಿಖಿತ</th>
+            <th class="bg-cream">ಮೌ</th>
+            <th class="bg-yellow">ಲಿ&amp;ಮೌ</th>
+            <th colspan="4" class="bg-cream">ಲಿಖಿತ</th>
+            <th class="bg-cream">ಮೌಖಿಕ</th>
+            <th class="bg-yellow">ಲಿ&amp;ಮೌ</th>
+            <th colspan="4" class="bg-cream">ಲಿಖಿತ</th>
+            <th class="bg-cream">ಮೌಖಿಕ</th>
+            <th class="bg-yellow">ಲಿ&amp;ಮೌ</th>
             <th class="bg-yellow">ಲಿ&amp;ಮೌ</th>
           </tr>
           <tr>
@@ -3075,21 +3314,21 @@
             <div class="h-l3">(ಈ ಕಛೇರಿ ಸುತ್ತೋಲೆ ಸಂಖ್ಯೆ: E-110911/DSERT/NEP/ECCE/15/2026-TECD ದಿನಾಂಕ: 07-08-2026)</div>
           </div>
           <table class="info-table">
-            <tr><th colspan="2">ಪ್ರಥಮ ಭಾಷೆ (ಕನ್ನಡ/ಆಂಗ್ಲ/ಉರ್ದು/ಮರಾಠಿ/ಹಿಂದಿ/ಸಂಸ್ಕೃತ/ತೆಲುಗು)</th></tr>
-            <tr><td style="width:45px; text-align:center;"><strong>1</strong></td><td>ವಾಕ್ಯ/ಪ್ಯಾರಾವನ್ನು ಸರಾಗವಾಗಿ ಅರ್ಥಸಹಿತ ಓದಿ, ಅರ್ಥವನ್ನು ಹೇಳುವರು.</td></tr>
-            <tr><td style="text-align:center;"><strong>2</strong></td><td>ಓದಿದ ವಿಷಯವನ್ನು ಅರ್ಥೈಸಿಕೊಂಡು, ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸುವರು (ಯಾರು, ಏನು, ಎಲ್ಲಿ, ಏಕೆ).</td></tr>
-            <tr><td style="text-align:center;"><strong>3</strong></td><td>ಸರಳ ವಾಕ್ಯಗಳನ್ನು ಸ್ವತಃ ಬರೆಯುವರು (3-5 ವಾಕ್ಯಗಳು).</td></tr>
-            <tr><td style="text-align:center;"><strong>4</strong></td><td>ದಿನನಿತ್ಯ ಜೀವನದಲ್ಲಿ ಕನ್ನಡ ಭಾಷೆಯನ್ನು ಮಾತನಾಡುವರು ಹಾಗೂ ಬಳಸುವರು.</td></tr>
-            <tr><th colspan="2" style="background:#fbe5d6;">Second Language / ದ್ವಿತೀಯ ಭಾಷೆ</th></tr>
-            <tr><td style="text-align:center;"><strong>1</strong></td><td>Reads simple sentences and a short paragraph with understanding.</td></tr>
-            <tr><td style="text-align:center;"><strong>2</strong></td><td>Answer simple questions based on the text (who, what, where, why).</td></tr>
-            <tr><td style="text-align:center;"><strong>3</strong></td><td>Write simple sentences independently (3-5 sentences). written communication.</td></tr>
-            <tr><td style="text-align:center;"><strong>4</strong></td><td>Use English for everyday communication (introductions, needs, basic expressions).</td></tr>
-            <tr><th colspan="2">ಗಣಿತ / Mathematics</th></tr>
-            <tr><td style="text-align:center;"><strong>1</strong></td><td>Read, write, and understand numbers upto: 3-digit level for 4th &amp; 5th Standard up to 4 digit for 6th to 10 Standard.<br/>ಮೂರು ಅಂಕಿಯ (4 ಮತ್ತು 5 ನೇ ತರಗತಿಗೆ) ಮತ್ತು ನಾಲ್ಕು ಅಂಕಿಯ (6 ರಿಂದ 10 ನೇ ತರಗತಿಯವರೆಗೆ) ಸಂಖ್ಯೆಯನ್ನು ಓದುವರು, ಬರೆಯುವರು ಮತ್ತು ಅರ್ಥೈಸಿಕೊಳ್ಳುವರು.</td></tr>
-            <tr><td style="text-align:center;"><strong>2</strong></td><td>Perform addition, subtraction, multiplication, and division in simple contexts up to 3-digit level for 4th &amp; 5th Standard up to 4 digit for 6th to 10 Standard.<br/>ಕನಿಷ್ಠ ಮೂರು ಅಂಕೆಗಳ (4 ಮತ್ತು 5 ನೇ ತರಗತಿಗೆ) ಮತ್ತು ನಾಲ್ಕು ಅಂಕೆಗಳ (6 ರಿಂದ 10 ನೇ ತರಗತಿಯವರೆಗೆ) ಸಂಕಲನ, ವ್ಯವಕಲನ, ಗುಣಾಕಾರ ಮತ್ತು ಭಾಗಾಕಾರದ ಲೆಕ್ಕಗಳನ್ನು ಮಾಡುವರು.</td></tr>
-            <tr><td style="text-align:center;"><strong>3</strong></td><td>Solve simple word problems using basic operations.<br/>ಗಣಿತದ ಮೂಲ ಕ್ರಿಯೆಗಳನ್ನು ಬಳಸಿ ವಾಕ್ಯ ರೂಪದ ಲೆಕ್ಕಗಳನ್ನು ಬಿಡಿಸುವರು.</td></tr>
-            <tr><td style="text-align:center;"><strong>4</strong></td><td>Apply math in daily life (time, money, length, and basic data).<br/>ನಿತ್ಯ ಜೀವನದಲ್ಲಿ ಗಣಿತದ ಕ್ರಿಯೆಗಳನ್ನು ಅನ್ವಯಿಸುವರು. (ಸಮಯ, ಹಣ, ಅಳತೆ ಮತ್ತು ದತ್ತಾಂಶ).</td></tr>
+            <tr><th colspan="2" class="bg-cream">ಪ್ರಥಮ ಭಾಷೆ (ಕನ್ನಡ/ಆಂಗ್ಲ/ಉರ್ದು/ಮರಾಠಿ/ಹಿಂದಿ/ಸಂಸ್ಕೃತ/ತೆಲುಗು)</th></tr>
+            <tr><td style="width:45px; text-align:center;"><strong>1</strong></td><td class="text-left">ವಾಕ್ಯ/ಪ್ಯಾರಾವನ್ನು ಸರಾಗವಾಗಿ ಅರ್ಥಸಹಿತ ಓದಿ, ಅರ್ಥವನ್ನು ಹೇಳುವರು.</td></tr>
+            <tr><td style="text-align:center;"><strong>2</strong></td><td class="text-left">ಓದಿದ ವಿಷಯವನ್ನು ಅರ್ಥೈಸಿಕೊಂಡು, ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸುವರು (ಯಾರು, ಏನು, ಎಲ್ಲಿ, ಏಕೆ).</td></tr>
+            <tr><td style="text-align:center;"><strong>3</strong></td><td class="text-left">ಸರಳ ವಾಕ್ಯಗಳನ್ನು ಸ್ವತಃ ಬರೆಯುವರು (3-5 ವಾಕ್ಯಗಳು).</td></tr>
+            <tr><td style="text-align:center;"><strong>4</strong></td><td class="text-left">ದಿನನಿತ್ಯ ಜೀವನದಲ್ಲಿ ಕನ್ನಡ ಭಾಷೆಯನ್ನು ಮಾತನಾಡುವರು ಹಾಗೂ ಬಳಸುವರು.</td></tr>
+            <tr><th colspan="2" class="bg-cream" style="background:#fbe5d6;">Second Language / ದ್ವಿತೀಯ ಭಾಷೆ</th></tr>
+            <tr><td style="text-align:center;"><strong>1</strong></td><td class="text-left">Reads simple sentences and a short paragraph with understanding.</td></tr>
+            <tr><td style="text-align:center;"><strong>2</strong></td><td class="text-left">Answer simple questions based on the text (who, what, where, why).</td></tr>
+            <tr><td style="text-align:center;"><strong>3</strong></td><td class="text-left">Write simple sentences independently (3-5 sentences). written communication.</td></tr>
+            <tr><td style="text-align:center;"><strong>4</strong></td><td class="text-left">Use English for everyday communication (introductions, needs, basic expressions).</td></tr>
+            <tr><th colspan="2" class="bg-cream">ಗಣಿತ / Mathematics</th></tr>
+            <tr><td style="text-align:center;"><strong>1</strong></td><td class="text-left">Read, write, and understand numbers upto: 3-digit level for 4th &amp; 5th Standard up to 4 digit for 6th to 10 Standard.<br/>ಮೂರು ಅಂಕಿಯ (4 ಮತ್ತು 5 ನೇ ತರಗತಿಗೆ) ಮತ್ತು ನಾಲ್ಕು ಅಂಕಿಯ (6 ರಿಂದ 10 ನೇ ತರಗತಿಯವರೆಗೆ) ಸಂಖ್ಯೆಯನ್ನು ಓದುವರು, ಬರೆಯುವರು ಮತ್ತು ಅರ್ಥೈಸಿಕೊಳ್ಳುವರು.</td></tr>
+            <tr><td style="text-align:center;"><strong>2</strong></td><td class="text-left">Perform addition, subtraction, multiplication, and division in simple contexts up to 3-digit level for 4th &amp; 5th Standard up to 4 digit for 6th to 10 Standard.<br/>ಕನಿಷ್ಠ ಮೂರು ಅಂಕೆಗಳ (4 ಮತ್ತು 5 ನೇ ತರಗತಿಗೆ) ಮತ್ತು ನಾಲ್ಕು ಅಂಕೆಗಳ (6 ರಿಂದ 10 ನೇ ತರಗತಿಯವರೆಗೆ) ಸಂಕಲನ, ವ್ಯವಕಲನ, ಗುಣಾಕಾರ ಮತ್ತು ಭಾಗಾಕಾರದ ಲೆಕ್ಕಗಳನ್ನು ಮಾಡುವರು.</td></tr>
+            <tr><td style="text-align:center;"><strong>3</strong></td><td class="text-left">Solve simple word problems using basic operations.<br/>ಗಣಿತದ ಮೂಲ ಕ್ರಿಯೆಗಳನ್ನು ಬಳಸಿ ವಾಕ್ಯ ರೂಪದ ಲೆಕ್ಕಗಳನ್ನು ಬಿಡಿಸುವರು.</td></tr>
+            <tr><td style="text-align:center;"><strong>4</strong></td><td class="text-left">Apply math in daily life (time, money, length, and basic data).<br/>ನಿತ್ಯ ಜೀವನದಲ್ಲಿ ಗಣಿತದ ಕ್ರಿಯೆಗಳನ್ನು ಅನ್ವಯಿಸುವರು. (ಸಮಯ, ಹಣ, ಅಳತೆ ಮತ್ತು ದತ್ತಾಂಶ).</td></tr>
           </table>
         </div>
       `;
@@ -3105,67 +3344,67 @@
           </div>
           <table class="info-table" style="font-size:11px;">
             <tr>
-              <th>ಕ್ರ.ಸಂ.</th>
-              <th>ನಿಗದಿಪಡಿಸಿದ ಕಾಲಾವಧಿ</th>
-              <th>ಪ್ರಥಮ ಭಾಷೆ (ಕನ್ನಡ)</th>
-              <th>ದ್ವಿತೀಯ ಭಾಷೆ (English)</th>
-              <th>ಗಣಿತ (Mathematics)</th>
+              <th class="bg-cream">ಕ್ರ.ಸಂ.</th>
+              <th class="bg-cream">ನಿಗದಿಪಡಿಸಿದ ಕಾಲಾವಧಿ</th>
+              <th class="bg-cream">ಪ್ರಥಮ ಭಾಷೆ (ಕನ್ನಡ)</th>
+              <th class="bg-cream">ದ್ವಿತೀಯ ಭಾಷೆ (English)</th>
+              <th class="bg-cream">ಗಣಿತ (Mathematics)</th>
             </tr>
             <tr>
               <td>1</td>
-              <td>ಆಗಸ್ಟ್ 21 ರಿಂದ 31, 2026</td>
-              <td><strong>ಅಕ್ಷರ ಹಂತ (LO-1):</strong> ವರ್ಣಮಾಲೆ, ಕಾಗುಣಿತಾಕ್ಷರಗಳು, ಒತ್ತಕ್ಷರಗಳು (ಸಜಾತಿ &amp; ವಿಜಾತಿ), ಸರಳ ಮೌಖಿಕ ಪ್ರಶ್ನೆಗಳು</td>
-              <td><strong>Letter Stage (LO-1):</strong> Alphabet Lower &amp; Upper Case, Vowels &amp; Consonants sounds, Simple Oral Questions</td>
-              <td><strong>ಅಂಕಿ/ಸಂಖ್ಯೆಗಳ ಹಂತ (1-99):</strong> ಗುರ್ತಿಸು/ಓದು, ಬರವಣಿಗೆ, ಅರ್ಥೈಸಿಕೊಳ್ಳುವಿಕೆ, ಸರಳ ಮೌಖಿಕ ಪ್ರಶ್ನೆಗಳು</td>
+              <td class="text-left">ಆಗಸ್ಟ್ 21 ರಿಂದ 31, 2026</td>
+              <td class="text-left"><strong>ಅಕ್ಷರ ಹಂತ (LO-1):</strong> ವರ್ಣಮಾಲೆ, ಕಾಗುಣಿತಾಕ್ಷರಗಳು, ಒತ್ತಕ್ಷರಗಳು (ಸಜಾತಿ &amp; ವಿಜಾತಿ), ಸರಳ ಮೌಖಿಕ ಪ್ರಶ್ನೆಗಳು</td>
+              <td class="text-left"><strong>Letter Stage (LO-1):</strong> Alphabet Lower &amp; Upper Case, Vowels &amp; Consonants sounds, Simple Oral Questions</td>
+              <td class="text-left"><strong>ಅಂಕಿ/ಸಂಖ್ಯೆಗಳ ಹಂತ (1-99):</strong> ಗುರ್ತಿಸು/ಓದು, ಬರವಣಿಗೆ, ಅರ್ಥೈಸಿಕೊಳ್ಳುವಿಕೆ, ಸರಳ ಮೌಖಿಕ ಪ್ರಶ್ನೆಗಳು</td>
             </tr>
             <tr>
               <td>2</td>
-              <td>ಸೆಪ್ಟೆಂಬರ್ 1 ರಿಂದ 15, 2026</td>
-              <td><strong>ಪದ ಹಂತ (LO-1):</strong> 2, 3, 4 ಅಕ್ಷರಗಳ ಅರ್ಥಸಹಿತ (ಒತ್ತಕ್ಷರ ರಹಿತ/ಸಹಿತ) ಪದಗಳು, ಮೌಖಿಕ ಪದ ಹೇಳುವುದು</td>
-              <td><strong>Word Stage (LO-1):</strong> 2, 3, 4 Letters' words, Sight words, Blends, Oral questions</td>
-              <td><strong>ಅಂಕಿ/ಸಂಖ್ಯೆಗಳ ಹಂತ (1-499):</strong> ಗುರ್ತಿಸು/ಓದು, ಬರವಣಿಗೆ, ಅರ್ಥೈಸಿಕೊಳ್ಳುವಿಕೆ, ಸರಳ ಮೌಖಿಕ ಪ್ರಶ್ನೆಗಳು</td>
+              <td class="text-left">ಸೆಪ್ಟೆಂಬರ್ 1 ರಿಂದ 15, 2026</td>
+              <td class="text-left"><strong>ಪದ ಹಂತ (LO-1):</strong> 2, 3, 4 ಅಕ್ಷರಗಳ ಅರ್ಥಸಹಿತ (ಒತ್ತಕ್ಷರ ರಹಿತ/ಸಹಿತ) ಪದಗಳು, ಮೌಖಿಕ ಪದ ಹೇಳುವುದು</td>
+              <td class="text-left"><strong>Word Stage (LO-1):</strong> 2, 3, 4 Letters' words, Sight words, Blends, Oral questions</td>
+              <td class="text-left"><strong>ಅಂಕಿ/ಸಂಖ್ಯೆಗಳ ಹಂತ (1-499):</strong> ಗುರ್ತಿಸು/ಓದು, ಬರವಣಿಗೆ, ಅರ್ಥೈಸಿಕೊಳ್ಳುವಿಕೆ, ಸರಳ ಮೌಖಿಕ ಪ್ರಶ್ನೆಗಳು</td>
             </tr>
             <tr>
               <td>3</td>
-              <td>ಸೆಪ್ಟೆಂಬರ್ 16 ರಿಂದ 30, 2026</td>
-              <td><strong>ವಾಕ್ಯ ರಚನಾ ಹಂತ (LO-1):</strong> 2, 3, 4 ಪದಗಳ ಅರ್ಥಸಹಿತ ವಾಕ್ಯ ಬರೆಯುವುದು &amp; ಹೇಳುವುದು</td>
-              <td><strong>Sentence Stage (LO-1):</strong> Writing 2, 3, 4 words' sentences with understanding, Oral questions</td>
-              <td><strong>ಅಂಕಿ/ಸಂಖ್ಯೆಗಳ ಹಂತ (1-999):</strong> ಗುರ್ತಿಸು/ಓದು, ಬರವಣಿಗೆ, ಅರ್ಥೈಸಿಕೊಳ್ಳುವಿಕೆ, ಸರಳ ಮೌಖಿಕ ಪ್ರಶ್ನೆಗಳು</td>
+              <td class="text-left">ಸೆಪ್ಟೆಂಬರ್ 16 ರಿಂದ 30, 2026</td>
+              <td class="text-left"><strong>ವಾಕ್ಯ ರಚನಾ ಹಂತ (LO-1):</strong> 2, 3, 4 ಪದಗಳ ಅರ್ಥಸಹಿತ ವಾಕ್ಯ ಬರೆಯುವುದು &amp; ಹೇಳುವುದು</td>
+              <td class="text-left"><strong>Sentence Stage (LO-1):</strong> Writing 2, 3, 4 words' sentences with understanding, Oral questions</td>
+              <td class="text-left"><strong>ಅಂಕಿ/ಸಂಖ್ಯೆಗಳ ಹಂತ (1-999):</strong> ಗುರ್ತಿಸು/ಓದು, ಬರವಣಿಗೆ, ಅರ್ಥೈಸಿಕೊಳ್ಳುವಿಕೆ, ಸರಳ ಮೌಖಿಕ ಪ್ರಶ್ನೆಗಳು</td>
             </tr>
             <tr>
               <td>4</td>
-              <td>ಅಕ್ಟೋಬರ್ 1 ರಿಂದ 31, 2026</td>
-              <td><strong>ಪ್ಯಾರಾ ಹಂತ (LO-1):</strong> 3, 4, 5 ವಾಕ್ಯಗಳ ಅರ್ಥಸಹಿತ ಪ್ಯಾರಾ ಬರೆಯುವುದು &amp; ಹೇಳುವುದು</td>
-              <td><strong>Para Stage (LO-1):</strong> 3, 4, 5 sentences' Para with understanding, Oral questions</td>
-              <td><strong>ಸಂಖ್ಯೆಗಳ ಹಂತ (1-999 / 1-9999):</strong> ಗುರ್ತಿಸು/ಓದು, ಬರವಣಿಗೆ, ಅರ್ಥೈಸಿಕೊಳ್ಳುವಿಕೆ, ಸರಳ ಮೌಖಿಕ ಪ್ರಶ್ನೆಗಳು</td>
+              <td class="text-left">ಅಕ್ಟೋಬರ್ 1 ರಿಂದ 31, 2026</td>
+              <td class="text-left"><strong>ಪ್ಯಾರಾ ಹಂತ (LO-1):</strong> 3, 4, 5 ವಾಕ್ಯಗಳ ಅರ್ಥಸಹಿತ ಪ್ಯಾರಾ ಬರೆಯುವುದು &amp; ಹೇಳುವುದು</td>
+              <td class="text-left"><strong>Para Stage (LO-1):</strong> 3, 4, 5 sentences' Para with understanding, Oral questions</td>
+              <td class="text-left"><strong>ಸಂಖ್ಯೆಗಳ ಹಂತ (1-999 / 1-9999):</strong> ಗುರ್ತಿಸು/ಓದು, ಬರವಣಿಗೆ, ಅರ್ಥೈಸಿಕೊಳ್ಳುವಿಕೆ, ಸರಳ ಮೌಖಿಕ ಪ್ರಶ್ನೆಗಳು</td>
             </tr>
             <tr>
               <td>5</td>
-              <td>ನವೆಂಬರ್ 1 ರಿಂದ 10, 2026</td>
-              <td><strong>LO-2 ಓದಿದ್ದನ್ನು ಅರ್ಥೈಸಿ ಉತ್ತರಿಸುವುದು:</strong> ಯಾರು? ಏನು? ಎಲ್ಲಿ? ಏಕೆ? ಹೇಗೆ? ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸುವುದು</td>
-              <td><strong>LO-2 Answer Stage:</strong> Who? What? Where? Why? How? based on grade-level text</td>
-              <td><strong>LO-2 ಮೂಲ ಕ್ರಿಯೆಗಳು (1-999 / 1-9999):</strong> ಸಂಕಲನ, ವ್ಯವಕಲನ, ಗುಣಾಕಾರ, ಭಾಗಾಕಾರ &amp; ಸರಳ ಮೌಖಿಕ ಲೆಕ್ಕಗಳು</td>
+              <td class="text-left">ನವೆಂಬರ್ 1 ರಿಂದ 10, 2026</td>
+              <td class="text-left"><strong>LO-2 ಓದಿದ್ದನ್ನು ಅರ್ಥೈಸಿ ಉತ್ತರಿಸುವುದು:</strong> ಯಾರು? ಏನು? ಎಲ್ಲಿ? ಏಕೆ? ಹೇಗೆ? ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸುವುದು</td>
+              <td class="text-left"><strong>LO-2 Answer Stage:</strong> Who? What? Where? Why? How? based on grade-level text</td>
+              <td class="text-left"><strong>LO-2 ಮೂಲ ಕ್ರಿಯೆಗಳು (1-999 / 1-9999):</strong> ಸಂಕಲನ, ವ್ಯವಕಲನ, ಗುಣಾಕಾರ, ಭಾಗಾಕಾರ &amp; ಸರಳ ಮೌಖಿಕ ಲೆಕ್ಕಗಳು</td>
             </tr>
             <tr>
               <td>6</td>
-              <td>ಡಿಸೆಂಬರ್ 01 ರಿಂದ 31, 2026</td>
-              <td><strong>LO-3 3-5 ವಾಕ್ಯ ಬರೆಯುವುದು:</strong> ನೀಡಿದ ವಸ್ತು/ವಿಷಯ/ಚಿತ್ರದ ಬಗ್ಗೆ 1-2 &amp; 3-5 ಸರಳ ವಾಕ್ಯಗಳನ್ನು ಸ್ವತಃ ಬರೆಯುವುದು</td>
-              <td><strong>LO-3 Writing Stage:</strong> Writes 1-2 &amp; 3-5 simple sentences independently about object/image/topic</td>
-              <td><strong>LO-3 ವಾಕ್ಯರೂಪದ ಮೂಲಕ್ರಿಯೆಗಳು:</strong> ಸಂಕಲನ, ವ್ಯವಕಲನ, ಗುಣಾಕಾರ, ಭಾಗಾಕಾರ &amp; ಮೌಖಿಕ ಲೆಕ್ಕಗಳು</td>
+              <td class="text-left">ಡಿಸೆಂಬರ್ 01 ರಿಂದ 31, 2026</td>
+              <td class="text-left"><strong>LO-3 3-5 ವಾಕ್ಯ ಬರೆಯುವುದು:</strong> ನೀಡಿದ ವಸ್ತು/ವಿಷಯ/ಚಿತ್ರದ ಬಗ್ಗೆ 1-2 &amp; 3-5 ಸರಳ ವಾಕ್ಯಗಳನ್ನು ಸ್ವತಃ ಬರೆಯುವುದು</td>
+              <td class="text-left"><strong>LO-3 Writing Stage:</strong> Writes 1-2 &amp; 3-5 simple sentences independently about object/image/topic</td>
+              <td class="text-left"><strong>LO-3 ವಾಕ್ಯರೂಪದ ಮೂಲಕ್ರಿಯೆಗಳು:</strong> ಸಂಕಲನ, ವ್ಯವಕಲನ, ಗುಣಾಕಾರ, ಭಾಗಾಕಾರ &amp; ಮೌಖಿಕ ಲೆಕ್ಕಗಳು</td>
             </tr>
             <tr>
               <td>7</td>
-              <td>ಜನವರಿ 01 ರಿಂದ 31, 2027</td>
-              <td><strong>LO-4 ದಿನನಿತ್ಯ ಭಾಷೆ ಬಳಕೆ ಹಂತ:</strong> ಪರಿಚಯ, ಅಗತ್ಯತೆ ಅಭಿವ್ಯಕ್ತಿ (ಪತ್ರ, ಸಂದೇಶ, ಸಂಭಾಷಣೆ, ಮೌಖಿಕ ಬಳಕೆ)</td>
-              <td><strong>LO-4 Everyday Communication:</strong> Introductions, basic expressions (Hello, Thank you, Please), formal &amp; oral usage</td>
-              <td><strong>LO-4 ನಿತ್ಯಜೀವನದಲ್ಲಿ ಅನ್ವಯ:</strong> ಸಮಯ, ಹಣ, ಅಳತೆ, ದತ್ತಾಂಶ &amp; ಸರಳ ಮೌಖಿಕ ಲೆಕ್ಕಗಳು</td>
+              <td class="text-left">ಜನವರಿ 01 ರಿಂದ 31, 2027</td>
+              <td class="text-left"><strong>LO-4 ದಿನನಿತ್ಯ ಭಾಷೆ ಬಳಕೆ ಹಂತ:</strong> ಪರಿಚಯ, ಅಗತ್ಯತೆ ಅಭಿವ್ಯಕ್ತಿ (ಪತ್ರ, ಸಂದೇಶ, ಸಂಭಾಷಣೆ, ಮೌಖಿಕ ಬಳಕೆ)</td>
+              <td class="text-left"><strong>LO-4 Everyday Communication:</strong> Introductions, basic expressions (Hello, Thank you, Please), formal &amp; oral usage</td>
+              <td class="text-left"><strong>LO-4 ನಿತ್ಯಜೀವನದಲ್ಲಿ ಅನ್ವಯ:</strong> ಸಮಯ, ಹಣ, ಅಳತೆ, ದತ್ತಾಂಶ &amp; ಸರಳ ಮೌಖಿಕ ಲೆಕ್ಕಗಳು</td>
             </tr>
             <tr>
               <td>8</td>
-              <td>ಜನವರಿ / ಫೆಬ್ರವರಿ, 2027</td>
-              <td><strong>FLN ಪ್ರಾವೀಣ್ಯತೆಯ ಪ್ರಸ್ತುತಿ / ಪ್ರದರ್ಶನ:</strong> FLN 1-4 ಪುನರಾವರ್ತನೆ ಮತ್ತು ಮೌಖಿಕ/ಲಿಖಿತ ಪ್ರಸ್ತುತಿ</td>
-              <td><strong>FLN Proficiency Presentation:</strong> Recapitulation of LO 1-4 &amp; oral/written demonstration</td>
-              <td><strong>FLN ಪ್ರಾವೀಣ್ಯತೆಯ ಪ್ರಸ್ತುತಿ / ಪ್ರದರ್ಶನ:</strong> FLN 1-4 ಪುನರಾವರ್ತನೆ ಮತ್ತು ಮೌಖಿಕ/ಲಿಖಿತ ಪ್ರಸ್ತುತಿ</td>
+              <td class="text-left">ಜನವರಿ / ಫೆಬ್ರವರಿ, 2027</td>
+              <td class="text-left"><strong>FLN ಪ್ರಾವೀಣ್ಯತೆಯ ಪ್ರಸ್ತುತಿ / ಪ್ರದರ್ಶನ:</strong> FLN 1-4 ಪುನರಾವರ್ತನೆ ಮತ್ತು ಮೌಖಿಕ/ಲಿಖಿತ ಪ್ರಸ್ತುತಿ</td>
+              <td class="text-left"><strong>FLN Proficiency Presentation:</strong> Recapitulation of LO 1-4 &amp; oral/written demonstration</td>
+              <td class="text-left"><strong>FLN ಪ್ರಾವೀಣ್ಯತೆಯ ಪ್ರಸ್ತುತಿ / ಪ್ರದರ್ಶನ:</strong> FLN 1-4 ಪುನರಾವರ್ತನೆ ಮತ್ತು ಮೌಖಿಕ/ಲಿಖಿತ ಪ್ರಸ್ತುತಿ</td>
             </tr>
           </table>
         </div>
@@ -3200,16 +3439,16 @@
           </div>
           <table class="info-table">
             <tr>
-              <th>ಕ್ರ.ಸಂ.</th>
-              <th>ಪ್ರಥಮ ಭಾಷೆ - ಕನ್ನಡ</th>
-              <th>ಪ್ರಥಮ/ದ್ವಿತೀಯ ಭಾಷೆ - ಇಂಗ್ಲೀಷ್</th>
-              <th>ಗಣಿತ</th>
+              <th class="bg-cream">ಕ್ರ.ಸಂ.</th>
+              <th class="bg-cream">ಪ್ರಥಮ ಭಾಷೆ - ಕನ್ನಡ</th>
+              <th class="bg-cream">ಪ್ರಥಮ/ದ್ವಿತೀಯ ಭಾಷೆ - ಇಂಗ್ಲೀಷ್</th>
+              <th class="bg-cream">ಗಣಿತ</th>
             </tr>
-            ${items.map(r => `<tr><td style="text-align:center;">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}
+            ${items.map(r => `<tr><td style="text-align:center;">${r[0]}</td><td class="text-left">${r[1]}</td><td class="text-left">${r[2]}</td><td class="text-left">${r[3]}</td></tr>`).join('')}
             <tr>
               <td></td>
               <td style="background:#e2f0d9; font-weight:700;">ಪ್ರಮುಖ ಸಾಹಿತ್ಯಗಳ ಲಿಂಕ್:</td>
-              <td colspan="2" style="background:#ffff00; font-weight:700;"><a href="https://dsert.karnataka.gov.in/kn" target="_blank" rel="noopener">https://dsert.karnataka.gov.in/kn</a></td>
+              <td colspan="2" class="bg-yellow" style="font-weight:700;"><a href="https://dsert.karnataka.gov.in/kn" target="_blank" rel="noopener">https://dsert.karnataka.gov.in/kn</a></td>
             </tr>
           </table>
         </div>
