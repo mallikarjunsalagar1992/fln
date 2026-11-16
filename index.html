@@ -509,7 +509,7 @@
 
     /* Print Rules for A4 Landscape */
     @media print {
-      @page { size: A4 landscape; margin: 4mm; }
+      @page { size: A4 landscape; margin: 8mm 10mm; }
 
       html, body {
         width: 100% !important;
@@ -1359,7 +1359,7 @@
           xml = xml.replace(/<pageMargins[^>]*\/>/g, '');
           xml = xml.replace(/<pageSetup[^>]*\/>/g, '');
 
-          const printTags = `<pageMargins left="0.18" right="0.18" top="0.22" bottom="0.22" header="0.1" footer="0.1"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="${fitH}"/>`;
+          const printTags = `<pageMargins left="0.4" right="0.4" top="0.35" bottom="0.35" header="0.15" footer="0.15"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="${fitH}"/>`;
 
           // FIX: Excel ನಿಯಮದ ಪ್ರಕಾರ pageMargins/pageSetup ಈ ಟ್ಯಾಗ್‌ಗಳ ಮೊದಲೇ ಬರಬೇಕು.
           // ಹಿಂದೆ ಇವು </worksheet> ಮೊದಲು (ignoredErrors ನಂತರ) ಸೇರುತ್ತಿದ್ದವು -> Excel ಫೈಲ್ ತೆರೆಯುತ್ತಿರಲಿಲ್ಲ.
@@ -1405,7 +1405,7 @@
         <x:WorksheetOptions>
           <x:PageSetup>
             <x:Layout x:Orientation="Landscape"/>
-            <x:PageMargins x:Bottom="0.22" x:Left="0.18" x:Right="0.18" x:Top="0.22"/>
+            <x:PageMargins x:Bottom="0.35" x:Left="0.4" x:Right="0.4" x:Top="0.35"/>
           </x:PageSetup>
           <x:FitToPage/>
           <x:Print><x:ValidPrinterInfo/><x:PaperSizeIndex>9</x:PaperSizeIndex><x:FitWidth>1</x:FitWidth><x:FitHeight>0</x:FitHeight></x:Print>
@@ -1413,7 +1413,7 @@
         </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook>
         </xml><![endif]-->
         <style>
-          @page { size: A4 landscape; margin: 5mm; }
+          @page { size: A4 landscape; margin: 8mm 10mm; }
           table { border-collapse: collapse; margin-bottom: 24px; width: 100%; }
           th, td { border: 1px solid #000; padding: 3px; text-align: center; font-family: Arial, sans-serif; font-size: 8.5pt; }
           th { background: #ddebf7; font-weight: bold; }
@@ -1737,7 +1737,7 @@
         `<cols>${colsXml}</cols>` +
         `<sheetData>${sheetData}</sheetData>` +
         mergeXml +
-        '<pageMargins left="0.18" right="0.18" top="0.22" bottom="0.22" header="0.1" footer="0.1"/>' +
+        '<pageMargins left="0.4" right="0.4" top="0.35" bottom="0.35" header="0.15" footer="0.15"/>' +
         `<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="${fitHeight ? 1 : 0}"/>` +
         '</worksheet>';
     }
@@ -2461,8 +2461,8 @@
     // =========================================================================
     function applyPrintA4Fit() {
       const sheets = document.querySelectorAll('.a4-sheet');
-      const maxPrintableWidthPx = 1045;
-      const maxPrintableHeightPx = 710;
+      const maxPrintableWidthPx = 1040;
+      const maxPrintableHeightPx = 700;
       sheets.forEach(sheet => {
         sheet.style.zoom = '';
         const w = sheet.scrollWidth;
